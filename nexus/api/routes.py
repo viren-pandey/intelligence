@@ -1,6 +1,8 @@
 import asyncio
 import uuid
 import json
+import hashlib
+import secrets
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -32,14 +34,33 @@ router = APIRouter()
 log = get_logger("api.routes")
 
 
+def _serialize(r):
+    d = dict(r)
+    for k, v in list(d.items()):
+        if isinstance(v, (uuid.UUID,)):
+            d[k] = str(v)
+        elif isinstance(v, datetime):
+            d[k] = v.isoformat()
+        elif isinstance(v, bytes):
+            d[k] = v.decode()
+    return d
+
+
 async def verify_api_key(api_key: str) -> dict:
     row = await fetchrow(
-        "SELECT id, is_active, rate_limit_per_hour, max_results_cap, credits_remaining, webhook_url FROM api_clients WHERE api_key = $1",
+        "SELECT id, client_name, api_key, is_active, rate_limit_per_hour, max_results_cap, credits_remaining, webhook_url, contact_email, password_hash, created_at FROM api_clients WHERE api_key = $1",
         api_key,
     )
     if not row or not row["is_active"]:
         raise HTTPException(status_code=401, detail="Invalid or inactive API key")
-    return dict(row)
+    return _serialize(row)
+
+
+async def verify_admin_key(api_key: str) -> dict:
+    client = await verify_api_key(api_key)
+    if client.get("client_name") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return client
 
 
 @router.post("/api/analyze")
@@ -591,4 +612,258 @@ async def api_login(
         "status": "authenticated",
         "api_key": row["api_key"],
         "client_id": str(row["id"]),
+    }
+
+
+@router.post("/api/register")
+async def api_register(
+    client_name: str = Form(...),
+    password: str = Form(...),
+    contact_email: str = Form(""),
+):
+    existing = await fetchrow(
+        "SELECT id FROM api_clients WHERE client_name = $1", client_name
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="Client name already taken")
+    api_key = f"nexus-{secrets.token_hex(16)}"
+    pw_hash = hashlib.sha256(password.encode()).hexdigest()
+    await execute(
+        """INSERT INTO api_clients (client_name, api_key, password_hash, contact_email,
+           credits_remaining, rate_limit_per_hour, max_results_cap)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+        client_name,
+        api_key,
+        pw_hash,
+        contact_email or None,
+        settings.DEFAULT_FREE_CREDITS,
+        settings.DEFAULT_FREE_RATE_LIMIT,
+        10,
+    )
+    row = await fetchrow("SELECT id FROM api_clients WHERE api_key = $1", api_key)
+    return {
+        "status": "ok",
+        "api_key": api_key,
+        "client_id": str(row["id"]),
+        "credits": settings.DEFAULT_FREE_CREDITS,
+    }
+
+
+@router.get("/api/user/profile")
+async def user_profile(x_api_key: str = Header(..., alias="X-API-Key")):
+    c = await verify_api_key(x_api_key)
+    return {
+        "client_id": c["id"],
+        "client_name": c["client_name"],
+        "api_key": c["api_key"],
+        "credits_remaining": c["credits_remaining"],
+        "rate_limit_per_hour": c["rate_limit_per_hour"],
+        "max_results_cap": c["max_results_cap"],
+        "contact_email": c.get("contact_email") or "",
+        "has_password": bool(c.get("password_hash")),
+    }
+
+
+@router.post("/api/user/contact")
+async def user_contact(
+    subject: str = Form(...),
+    message: str = Form(...),
+    x_api_key: str = Header(..., alias="X-API-Key"),
+):
+    c = await verify_api_key(x_api_key)
+    await execute(
+        """INSERT INTO contact_requests (client_id, client_name, contact_email, subject, message, request_type)
+           VALUES ($1::uuid, $2, $3, $4, $5, 'user_message')""",
+        c["id"],
+        c.get("client_name"),
+        c.get("contact_email"),
+        subject,
+        message,
+    )
+    return {"status": "sent"}
+
+
+@router.post("/api/user/regenerate-key")
+async def user_regenerate_key(x_api_key: str = Header(..., alias="X-API-Key")):
+    c = await verify_api_key(x_api_key)
+    new_key = f"nexus-{secrets.token_hex(16)}"
+    await execute(
+        "UPDATE api_clients SET api_key = $2 WHERE id = $1::uuid", c["id"], new_key
+    )
+    return {"status": "ok", "api_key": new_key}
+
+
+@router.get("/api/admin/clients")
+async def admin_list_clients(x_api_key: str = Header(..., alias="X-API-Key")):
+    await verify_admin_key(x_api_key)
+    rows = await fetch("SELECT * FROM api_clients ORDER BY created_at DESC")
+    return {"clients": [_serialize(r) for r in rows]}
+
+
+@router.post("/api/admin/clients")
+async def admin_create_client(
+    client_name: str = Form(...),
+    credits: int = Form(50),
+    rate_limit: int = Form(50),
+    max_results: int = Form(50),
+    x_api_key: str = Header(..., alias="X-API-Key"),
+):
+    await verify_admin_key(x_api_key)
+    existing = await fetchrow(
+        "SELECT id FROM api_clients WHERE client_name = $1", client_name
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="Client name already exists")
+    api_key = f"nexus-{secrets.token_hex(16)}"
+    await execute(
+        """INSERT INTO api_clients (client_name, api_key, credits_remaining, rate_limit_per_hour, max_results_cap)
+           VALUES ($1, $2, $3, $4, $5)""",
+        client_name,
+        api_key,
+        credits,
+        rate_limit,
+        max_results,
+    )
+    return {"status": "created", "api_key": api_key, "client_name": client_name}
+
+
+@router.delete("/api/admin/clients/{client_id}")
+async def admin_delete_client(
+    client_id: str, x_api_key: str = Header(..., alias="X-API-Key")
+):
+    await verify_admin_key(x_api_key)
+    await execute(
+        "DELETE FROM api_clients WHERE id = $1::uuid AND client_name != 'admin'",
+        client_id,
+    )
+    return {"status": "deleted"}
+
+
+@router.patch("/api/admin/clients/{client_id}")
+async def admin_update_client(
+    client_id: str,
+    credits: Optional[int] = Form(None),
+    rate_limit: Optional[int] = Form(None),
+    max_results: Optional[int] = Form(None),
+    is_active: Optional[bool] = Form(None),
+    x_api_key: str = Header(..., alias="X-API-Key"),
+):
+    await verify_admin_key(x_api_key)
+    sets = []
+    params = [client_id]
+    idx = 2
+    if credits is not None:
+        sets.append(f"credits_remaining = ${idx}")
+        params.append(credits)
+        idx += 1
+    if rate_limit is not None:
+        sets.append(f"rate_limit_per_hour = ${idx}")
+        params.append(rate_limit)
+        idx += 1
+    if max_results is not None:
+        sets.append(f"max_results_cap = ${idx}")
+        params.append(max_results)
+        idx += 1
+    if is_active is not None:
+        sets.append(f"is_active = ${idx}")
+        params.append(is_active)
+        idx += 1
+    if sets:
+        await execute(
+            f"UPDATE api_clients SET {', '.join(sets)} WHERE id = $1::uuid", *params
+        )
+    return {"status": "updated"}
+
+
+@router.get("/api/admin/messages")
+async def admin_list_messages(
+    status: str = Query("pending"),
+    x_api_key: str = Header(..., alias="X-API-Key"),
+):
+    await verify_admin_key(x_api_key)
+    if status == "all":
+        rows = await fetch(
+            "SELECT * FROM contact_requests ORDER BY created_at DESC LIMIT 100"
+        )
+    else:
+        rows = await fetch(
+            "SELECT * FROM contact_requests WHERE status = $1 ORDER BY created_at DESC LIMIT 100",
+            status,
+        )
+    return {"messages": [_serialize(r) for r in rows]}
+
+
+@router.post("/api/admin/messages/{message_id}/resolve")
+async def admin_resolve_message(
+    message_id: str,
+    credits: int = Form(0),
+    notes: str = Form(""),
+    x_api_key: str = Header(..., alias="X-API-Key"),
+):
+    await verify_admin_key(x_api_key)
+    row = await fetchrow(
+        "SELECT * FROM contact_requests WHERE id = $1::uuid", message_id
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if credits > 0 and row["client_id"]:
+        await execute(
+            "UPDATE api_clients SET credits_remaining = credits_remaining + $2 WHERE id = $1::uuid",
+            row["client_id"],
+            credits,
+        )
+    await execute(
+        "UPDATE contact_requests SET status = 'resolved', admin_notes = $2, resolved_at = NOW() WHERE id = $1::uuid",
+        message_id,
+        notes,
+    )
+    return {"status": "resolved", "credits_added": credits}
+
+
+@router.post("/api/admin/crawl/trigger")
+async def admin_trigger_crawl(x_api_key: str = Header(..., alias="X-API-Key")):
+    await verify_admin_key(x_api_key)
+    row = await fetchrow(
+        "INSERT INTO crawl_sessions (triggered_by, source_system, status) VALUES ('admin_api', 'admin', 'running') RETURNING session_id",
+    )
+    session_id = str(row["session_id"])
+    broad_queries = [
+        '"intern" "2025" "apply"',
+        '"fresher" "software" "intern"',
+        '"python" "internship" "remote"',
+        '"machine learning" "intern"',
+        '"backend" "intern" "apply"',
+    ]
+    asyncio.create_task(dispatcher.dispatch(session_id, broad_queries))
+    return {"status": "triggered", "session_id": session_id}
+
+
+@router.get("/api/admin/sessions")
+async def admin_list_sessions(
+    limit: int = Query(20), x_api_key: str = Header(..., alias="X-API-Key")
+):
+    await verify_admin_key(x_api_key)
+    rows = await fetch(
+        "SELECT * FROM crawl_sessions ORDER BY started_at DESC LIMIT $1", limit
+    )
+    return {"sessions": [_serialize(r) for r in rows]}
+
+
+@router.get("/api/admin/sessions/{session_id}")
+async def admin_session_detail(
+    session_id: str, x_api_key: str = Header(..., alias="X-API-Key")
+):
+    await verify_admin_key(x_api_key)
+    session = await fetchrow(
+        "SELECT * FROM crawl_sessions WHERE session_id = $1::uuid", session_id
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    sources = await fetch(
+        "SELECT * FROM crawl_source_logs WHERE session_id = $1::uuid ORDER BY started_at",
+        session_id,
+    )
+    return {
+        "session": _serialize(session),
+        "sources": [_serialize(s) for s in sources],
     }

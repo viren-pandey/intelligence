@@ -67,7 +67,7 @@ app = FastAPI(
 
 @app.middleware("http")
 async def admin_auth_middleware(request: Request, call_next):
-    if request.url.path.startswith("/admin/") or request.url.path == "/admin":
+    if request.url.path.startswith("/admin/"):
         auth = request.headers.get("Authorization")
         if auth and auth.startswith("Basic "):
             try:
@@ -89,37 +89,29 @@ async def admin_auth_middleware(request: Request, call_next):
     return await call_next(request)
 
 
+from fastapi.responses import HTMLResponse
+
 frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
+
+
+def _serve_html(filename: str) -> HTMLResponse:
+    path = os.path.join(frontend_dir, filename)
+    if os.path.isfile(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return HTMLResponse(f.read())
+    return HTMLResponse("Not found", status_code=404)
+
+
 if os.path.isdir(frontend_dir):
     app.mount("/static/frontend", StaticFiles(directory=frontend_dir), name="frontend")
 
     @app.get("/")
-    async def serve_frontend():
-        index_path = os.path.join(frontend_dir, "index.html")
-        if os.path.isfile(index_path):
-            with open(index_path, "r", encoding="utf-8") as f:
-                return Response(content=f.read(), media_type="text/html")
-        return Response(content="Frontend not found", media_type="text/plain")
+    async def serve_index():
+        return _serve_html("index.html")
 
-
-if os.path.isdir(frontend_dir):
-    from fastapi.responses import HTMLResponse
-
-    @app.get("/admin-panel")
-    async def serve_admin_panel():
-        path = os.path.join(frontend_dir, "admin.html")
-        if os.path.isfile(path):
-            with open(path, "r", encoding="utf-8") as f:
-                return HTMLResponse(f.read())
-        return Response("Not found", status_code=404)
-
-    @app.get("/playground")
-    async def serve_playground():
-        path = os.path.join(frontend_dir, "playground.html")
-        if os.path.isfile(path):
-            with open(path, "r", encoding="utf-8") as f:
-                return HTMLResponse(f.read())
-        return Response("Not found", status_code=404)
+    @app.get("/admin")
+    async def serve_admin():
+        return _serve_html("admin.html")
 
 
 app.include_router(api_router)

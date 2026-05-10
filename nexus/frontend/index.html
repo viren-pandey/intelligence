@@ -3,480 +3,334 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEXUS — Intelligence Middleware</title>
-<link rel="stylesheet" href="/static/frontend/css/style.css">
+<title>NEXUS Dashboard</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Consolas', 'Courier New', monospace; background: #fff; color: #000; font-size: 14px; line-height: 1.5; }
+a { color: #000; text-decoration: underline; }
+a:hover { background: #000; color: #fff; }
+.header { border-bottom: 2px solid #000; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; }
+.header h1 { font-size: 18px; font-weight: 700; }
+.header h1 span { background: #000; color: #fff; padding: 0 6px; }
+.header .nav a { margin-left: 12px; font-size: 13px; }
+.content { max-width: 960px; margin: 0 auto; padding: 20px; }
+.section { border: 1px solid #000; margin-bottom: 20px; }
+.section-title { background: #000; color: #fff; padding: 6px 12px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-body { padding: 16px; }
+.row { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+.col { flex: 1; min-width: 200px; }
+label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+input, select, textarea { font-family: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid #000; background: #fff; color: #000; width: 100%; border-radius: 0; }
+input:focus, select:focus, textarea:focus { outline: 2px solid #000; }
+textarea { min-height: 60px; resize: vertical; }
+.btn { font-family: inherit; font-size: 12px; padding: 6px 14px; border: 1px solid #000; background: #fff; color: #000; cursor: pointer; border-radius: 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+.btn:hover { background: #000; color: #fff; }
+.btn-sm { padding: 3px 8px; font-size: 11px; }
+.btn-red { border-color: #000; }
+.btn-red:hover { background: #000; color: #fff; }
+.stat-box { border: 1px solid #000; padding: 10px; text-align: center; min-width: 120px; }
+.stat-box .num { font-size: 24px; font-weight: 700; }
+.stat-box .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+table { border-collapse: collapse; width: 100%; font-size: 12px; }
+th, td { border: 1px solid #000; padding: 6px 10px; text-align: left; }
+th { background: #000; color: #fff; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+tr:hover { background: #f5f5f5; }
+.code { font-family: inherit; background: #f5f5f5; border: 1px solid #000; padding: 8px 10px; font-size: 12px; word-break: break-all; }
+.alert { border: 1px solid #000; padding: 8px 12px; margin: 8px 0; font-size: 12px; }
+.alert-ok { background: #fff; }
+.alert-err { background: #000; color: #fff; }
+.hidden { display: none; }
+.mt { margin-top: 12px; }
+.mb { margin-bottom: 12px; }
+.flex { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.gap { gap: 12px; }
+.w-full { width: 100%; }
+.copy-btn { cursor: pointer; border: 1px solid #000; padding: 2px 8px; font-size: 11px; background: #fff; font-family: inherit; }
+.copy-btn:hover { background: #000; color: #fff; }
+.status-dot { display: inline-block; width: 8px; height: 8px; border: 1px solid #000; margin-right: 4px; }
+.status-dot.on { background: #000; }
+</style>
 </head>
 <body>
+
 <div class="header">
-  <div>
-    <h1><span>NEXUS</span> DASHBOARD</h1>
-    <div class="subtitle">Recruitment Intelligence Middleware</div>
+  <h1><span>NEXUS</span> Dashboard</h1>
+  <div class="nav">
+    <a href="/">Home</a>
+    <a href="/admin">Admin</a>
+    <a href="#" id="logout-link" class="hidden" onclick="logout()">Logout</a>
   </div>
-  <div class="right" id="headerRight">
-    <span class="user-badge" id="userBadge" style="display:none"></span>
-    <button class="btn btn-sm" id="loginBtn" onclick="showPage('login')">Login</button>
-    <button class="btn btn-sm" id="logoutBtn" style="display:none" onclick="doLogout()">Logout</button>
-  </div>
-</div>
-<div class="nav">
-  <a href="#" class="active" data-page="dashboard" onclick="showPage('dashboard')">Dashboard</a>
-  <a href="#" data-page="analyze" onclick="showPage('analyze')">Analyze</a>
-  <a href="#" data-page="jobs" onclick="showPage('jobs')">Jobs</a>
-  <a href="#" data-page="webhook" onclick="showPage('webhook')">Webhook</a>
-  <a href="#" data-page="admin" onclick="showPage('admin')">Admin</a>
-  <a href="/admin-panel" style="color:#e94560">Admin Panel</a>
-  <a href="/playground" style="color:#60a5fa">API Playground</a>
-  <a href="#" data-page="about" onclick="showPage('about')">About</a>
 </div>
 
 <div class="content">
 
-<div class="page active" id="page-dashboard">
-  <div id="loginView">
-    <div class="card" style="max-width:400px;margin:60px auto">
-      <h2>Login to NEXUS</h2>
-      <p style="font-size:13px;color:#888;margin-bottom:16px">Enter your client credentials to access the dashboard.</p>
-      <div class="form-group">
-        <label>Client Name</label>
-        <input type="text" id="loginName" placeholder="e.g. internhunt" value="admin">
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" id="loginPass" placeholder="Your password" value="nexus-admin-dev" onkeydown="if(event.key==='Enter')doLogin()">
-      </div>
-      <button class="btn btn-primary" onclick="doLogin()" style="width:100%">Login</button>
-      <div id="loginError" class="alert alert-error" style="display:none;margin-top:12px"></div>
-    </div>
-  </div>
-  <div id="dashView" style="display:none">
-    <div class="stat-grid" id="statGrid">
-      <div class="stat-card"><div class="num" id="statCredits">-</div><div class="label">Credits Remaining</div></div>
-      <div class="stat-card"><div class="num" id="statJobs">-</div><div class="label">Active Jobs</div></div>
-      <div class="stat-card"><div class="num" id="statTrust">-</div><div class="label">Avg Trust Score</div></div>
-      <div class="stat-card"><div class="num" id="stat24h">-</div><div class="label">Jobs Added (24h)</div></div>
-      <div class="stat-card"><div class="num" id="statSources">-</div><div class="label">Active Sources</div></div>
-      <div class="stat-card"><div class="num" id="statHealth">-</div><div class="label">System Status</div></div>
-    </div>
-    <div class="card">
-      <h2>Account Info</h2>
-      <table>
-        <tr><th>Field</th><th>Value</th></tr>
-        <tr><td>Client Name</td><td id="acctName">-</td></tr>
-        <tr><td>Client ID</td><td id="acctId" style="font-family:monospace;font-size:12px">-</td></tr>
-        <tr><td>API Key</td><td><code class="api-key-display" id="acctKey" style="font-size:12px">-</code> <button class="btn btn-sm" onclick="copyText(getStored().api_key)">Copy</button></td></tr>
-      </table>
-    </div>
-    <div class="card">
-      <h2>Jobs by Source</h2>
-      <table id="sourceTable">
-        <thead><tr><th>Source</th><th>Count</th></tr></thead>
-        <tbody id="sourceBody"><tr><td colspan="2" class="loading">Loading...</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<div class="page" id="page-analyze">
-  <div class="card">
-    <h2>Profile Analysis</h2>
-    <p style="font-size:13px;color:#888;margin-bottom:12px">Submit a candidate profile to discover matching jobs via the ATS pipeline.</p>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" id="anaName" placeholder="e.g. John Doe" value="Test User">
-      </div>
-      <div class="form-group">
-        <label>College / University</label>
-        <input type="text" id="anaCollege" placeholder="e.g. MIT" value="Test University">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Degree</label>
-        <input type="text" id="anaDegree" placeholder="e.g. B.Tech" value="B.Tech">
-      </div>
-      <div class="form-group">
-        <label>Graduation Year</label>
-        <input type="number" id="anaYear" value="2025">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Branch / Major</label>
-        <input type="text" id="anaBranch" placeholder="e.g. Computer Science" value="Computer Science">
-      </div>
-      <div class="form-group">
-        <label>Experience (months)</label>
-        <input type="number" id="anaExp" value="6">
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Skills (comma-separated)</label>
-      <input type="text" id="anaSkills" value="Python, JavaScript, React, Node.js, Docker, AWS, TypeScript, PostgreSQL">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Preferred Roles</label>
-        <input type="text" id="anaRoles" value="Full Stack Developer, Backend Engineer">
-      </div>
-      <div class="form-group">
-        <label>Preferred Location</label>
-        <input type="text" id="anaLocation" value="Remote">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Max Results</label>
-        <input type="number" id="anaMax" value="10" min="1" max="50">
-      </div>
-      <div class="form-group">
-        <label>Remote Preference</label>
-        <select id="anaRemote">
-          <option value="remote">Remote</option>
-          <option value="hybrid">Hybrid</option>
-          <option value="onsite">On-site</option>
-          <option value="any">Any</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Profile Summary</label>
-      <textarea id="anaSummary" placeholder="Brief summary of the candidate">A full stack developer with 6 months internship experience</textarea>
-    </div>
-    <button class="btn btn-primary" onclick="doAnalyze()">Run Analysis</button>
-    <div id="anaStatus" style="margin-top:12px"></div>
-  </div>
-  <div id="anaResults" style="display:none">
-    <div class="card">
-      <h2>Results <span id="anaMeta" style="font-size:12px;color:#888;font-weight:400"></span></h2>
-      <div id="anaResultList"></div>
-    </div>
-  </div>
-</div>
-
-<div class="page" id="page-jobs">
-  <div class="card">
-    <h2>Job Feed</h2>
-    <div class="form-row" style="margin-bottom:12px">
-      <div class="form-group">
-        <label>Skills Filter</label>
-        <input type="text" id="jobsSkills" placeholder="python, react">
-      </div>
-      <div class="form-group">
-        <label>Source</label>
-        <select id="jobsSource">
-          <option value="">All</option>
-          <option value="remoteok">RemoteOK</option>
-          <option value="weworkremotely">We Work Remotely</option>
-          <option value="internshala">Internshala</option>
-          <option value="linkedin">LinkedIn</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Job Type</label>
-        <select id="jobsType">
-          <option value="">All</option>
-          <option value="full-time">Full-time</option>
-          <option value="part-time">Part-time</option>
-          <option value="internship">Internship</option>
-          <option value="contract">Contract</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Limit</label>
-        <input type="number" id="jobsLimit" value="20">
-      </div>
-    </div>
-    <button class="btn btn-primary" onclick="loadJobs()">Search Jobs</button>
-  </div>
-  <div class="card" id="jobsResults">
-    <h2>Job Listings</h2>
-    <table>
-      <thead><tr><th>Title</th><th>Company</th><th>Location</th><th>Source</th><th>Trust</th></tr></thead>
-      <tbody id="jobsBody"><tr><td colspan="5" class="loading">Run a search to see results</td></tr></tbody>
-    </table>
-  </div>
-</div>
-
-<div class="page" id="page-webhook">
-  <div class="card">
-    <h2>Webhook Registration</h2>
-    <p style="font-size:13px;color:#888;margin-bottom:12px">Register a webhook URL to receive async crawl results via POST.</p>
-    <div class="form-group">
-      <label>Webhook URL</label>
-      <input type="url" id="whUrl" placeholder="https://your-server.com/webhook">
-    </div>
-    <div class="form-group">
-      <label>Events</label>
-      <select id="whEvents">
-        <option value="crawl_complete">Crawl Complete</option>
-        <option value="crawl_complete,crawl_failed">All Events</option>
-      </select>
-    </div>
-    <button class="btn btn-primary" onclick="doRegisterWebhook()">Register Webhook</button>
-    <div id="whStatus" style="margin-top:12px"></div>
-  </div>
-</div>
-
-<div class="page" id="page-admin">
-  <div class="card">
-    <h2>Admin Panel</h2>
-    <p style="font-size:13px;color:#888;margin-bottom:12px">Access the full admin panel for crawler management, source control, and client administration.</p>
-    <a href="/admin" target="_blank" class="btn btn-primary">Open Admin Panel</a>
-  </div>
-  <div class="card">
-    <h2>API Endpoints</h2>
-    <table>
-      <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
-      <tbody>
-        <tr><td><span class="badge badge-ok">GET</span></td><td><code>/api/health</code></td><td>System health check</td></tr>
-        <tr><td><span class="badge badge-ok">GET</span></td><td><code>/api/stats</code></td><td>System statistics</td></tr>
-        <tr><td><span class="badge badge-pending">POST</span></td><td><code>/api/analyze</code></td><td>Submit a profile for analysis</td></tr>
-        <tr><td><span class="badge badge-ok">GET</span></td><td><code>/api/jobs</code></td><td>List discovered jobs</td></tr>
-        <tr><td><span class="badge badge-ok">GET</span></td><td><code>/api/jobs/{id}</code></td><td>Job details</td></tr>
-        <tr><td><span class="badge badge-warn">POST</span></td><td><code>/api/jobs/{id}/report</code></td><td>Report a job</td></tr>
-        <tr><td><span class="badge badge-pending">POST</span></td><td><code>/api/webhook/register</code></td><td>Register webhook</td></tr>
-        <tr><td><span class="badge badge-pending">POST</span></td><td><code>/api/login</code></td><td>Client authentication</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<div class="page" id="page-about">
-  <div class="card">
-    <h2>About NEXUS</h2>
-    <p style="font-size:13px;line-height:1.7;color:#a8b2d1">
-      NEXUS is a recruitment intelligence middleware that crawls 100+ public sources, 
-      scores discovered jobs using ATS matching (skills, role, location, batch, comp, company),
-      trust analysis (payment detection, domain age, company footprint), 
-      freshness scoring (deadline-based decay), and niche detection.
-    </p>
-    <p style="font-size:13px;line-height:1.7;color:#a8b2d1;margin-top:8px">
-      Built with FastAPI, asyncpg, Playwright, and Celery. Deployed on Hugging Face Spaces.
-    </p>
-    <hr style="border-color:#2a2a4a;margin:16px 0">
-    <h3>Environment</h3>
-    <table>
-      <tr><td>API Base</td><td><code id="aboutBase"></code></td></tr>
-      <tr><td>DB Status</td><td id="aboutDb">-</td></tr>
-      <tr><td>Redis Status</td><td id="aboutRedis">-</td></tr>
-      <tr><td>App Version</td><td>1.0.0</td></tr>
-    </table>
-  </div>
-</div>
-
-</div>
-
-<script src="/static/frontend/js/api.js"></script>
-<script>
-let currentPage = 'dashboard';
-
-function showPage(name) {
-  currentPage = name;
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const page = document.getElementById('page-' + name);
-  if (page) page.classList.add('active');
-  document.querySelectorAll('.nav a').forEach(a => {
-    a.classList.toggle('active', a.dataset.page === name);
-  });
-  updateUI();
-}
-
-function updateUI() {
-  const loggedIn = isLoggedIn();
-  document.getElementById('loginBtn').style.display = loggedIn ? 'none' : '';
-  document.getElementById('logoutBtn').style.display = loggedIn ? '' : 'none';
-  document.getElementById('userBadge').style.display = loggedIn ? '' : 'none';
-  if (loggedIn) {
-    const s = getStored();
-    document.getElementById('userBadge').textContent = s.client_name || 'User';
-  }
-  if (currentPage === 'dashboard') refreshDashboard();
-  if (currentPage === 'about') loadAbout();
-}
-
-async function refreshDashboard() {
-  const loggedIn = isLoggedIn();
-  document.getElementById('loginView').style.display = loggedIn ? 'none' : '';
-  document.getElementById('dashView').style.display = loggedIn ? '' : '';
-  if (!loggedIn) return;
-
-  const r = await checkCredits();
-  if (r.ok) {
-    document.getElementById('statJobs').textContent = r.data.total_active_jobs || 0;
-    document.getElementById('statTrust').textContent = r.data.average_trust_score || 0;
-    document.getElementById('stat24h').textContent = r.data.jobs_added_24h || 0;
-    if (r.data.jobs_by_source) {
-      document.getElementById('statSources').textContent = r.data.jobs_by_source.length;
-      document.getElementById('sourceBody').innerHTML = r.data.jobs_by_source.map(s =>
-        `<tr><td>${s.source}</td><td>${s.count}</td></tr>`
-      ).join('');
-    }
-  }
-
-  const h = await getHealth();
-  if (h.ok) {
-    document.getElementById('statHealth').textContent = h.data.status || 'unknown';
-    document.getElementById('statHealth').style.color = h.data.status === 'ok' ? '#4ade80' : '#fbbf24';
-    document.getElementById('statDb').textContent = h.data.db ? 'Connected' : 'Down';
-    document.getElementById('statRedis').textContent = h.data.redis ? 'Connected' : 'Unavailable';
-  }
-
-  const s = getStored();
-  document.getElementById('acctName').textContent = s.client_name || '-';
-  document.getElementById('acctId').textContent = s.client_id || '-';
-  document.getElementById('acctKey').textContent = s.api_key || '-';
-}
-
-async function doLogin() {
-  const name = document.getElementById('loginName').value.trim();
-  const pass = document.getElementById('loginPass').value.trim();
-  const errDiv = document.getElementById('loginError');
-  errDiv.style.display = 'none';
-  if (!name || !pass) { errDiv.textContent = 'Please enter both client name and password.'; errDiv.style.display = ''; return; }
-  const r = await login(name, pass);
-  if (r.ok) {
-    updateUI();
-    showPage('dashboard');
-  } else {
-    errDiv.textContent = r.data.detail || 'Login failed. Check credentials.';
-    errDiv.style.display = '';
-  }
-}
-
-function doLogout() {
-  clearSession();
-  updateUI();
-  showPage('dashboard');
-}
-
-async function doAnalyze() {
-  const statusDiv = document.getElementById('anaStatus');
-  const resultsDiv = document.getElementById('anaResults');
-  statusDiv.innerHTML = '<div class="alert alert-info">Running analysis...</div>';
-  resultsDiv.style.display = 'none';
-
-  const skills = document.getElementById('anaSkills').value.split(',').map(s => s.trim()).filter(Boolean);
-  const roles = document.getElementById('anaRoles').value.split(',').map(s => s.trim()).filter(Boolean);
-  const prefs = document.getElementById('anaLocation').value.split(',').map(s => s.trim()).filter(Boolean);
-
-  const profile = {
-    user_id: 'dashboard-user',
-    full_name: document.getElementById('anaName').value.trim() || 'Test User',
-    college: document.getElementById('anaCollege').value.trim(),
-    degree: document.getElementById('anaDegree').value.trim(),
-    graduation_year: parseInt(document.getElementById('anaYear').value) || 2025,
-    branch: document.getElementById('anaBranch').value.trim(),
-    skills: skills,
-    certifications: [],
-    projects: [],
-    internships: [],
-    experience_months: parseInt(document.getElementById('anaExp').value) || 0,
-    preferred_roles: roles,
-    preferred_location: prefs,
-    remote_preference: document.getElementById('anaRemote').value,
-    salary_expectation_inr: null,
-    companies_of_interest: [],
-    profile_summary: document.getElementById('anaSummary').value.trim(),
-  };
-
-  const options = {
-    max_results: parseInt(document.getElementById('anaMax').value) || 10,
-    include_unpaid: false,
-    include_niche: true,
-    freshness_days: 30,
-    mode: 'sync',
-  };
-
-  const r = await analyzeProfile(profile, options);
-  if (r.ok) {
-    statusDiv.innerHTML = `<div class="alert alert-success">Analysis complete in ${r.data.processing_time_ms}ms — ${r.data.total_after_filter} results</div>`;
-    const meta = document.getElementById('anaMeta');
-    meta.textContent = `— ${r.data.total_discovered} found, ${r.data.total_after_filter} ranked, ${r.data.processing_time_ms}ms`;
-    const list = document.getElementById('anaResultList');
-    if (r.data.results && r.data.results.length > 0) {
-      list.innerHTML = r.data.results.map((job, i) => `
-        <div class="card" style="margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;align-items:start">
-            <div>
-              <strong style="color:#e0e0e0">#${job.rank} ${job.title}</strong>
-              <span style="color:#888;font-size:12px"> @ ${job.company}</span>
-            </div>
-            <span class="badge ${job.ats_match_score > 0.6 ? 'badge-ok' : 'badge-warn'}">${(job.ats_match_score * 100).toFixed(0)}% match</span>
-          </div>
-          <div style="font-size:12px;color:#888;margin-top:6px">
-            ${job.location} · ${job.remote_status} · ${job.job_type}
-            ${job.paid !== null ? ' · ' + (job.paid ? 'Paid' : 'Unpaid') : ''}
-          </div>
-          <div style="font-size:12px;color:#888;margin-top:4px">${job.match_reason || ''}</div>
-          ${job.skills_matched && job.skills_matched.length ? `<div style="margin-top:4px;font-size:12px">Matched: ${job.skills_matched.map(s => `<span class="badge badge-ok">${s}</span>`).join(' ')}</div>` : ''}
-          <div style="margin-top:6px"><a href="${job.apply_link}" target="_blank" class="btn btn-sm">Apply</a></div>
+<div id="login-section">
+  <div class="section">
+    <div class="section-title">Register</div>
+    <div class="section-body">
+      <div class="row">
+        <div class="col">
+          <label>Client Name</label>
+          <input type="text" id="reg-name" placeholder="your-company">
         </div>
-      `).join('');
-    } else {
-      list.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p style="color:#888">No matching jobs found. Try broader skills or filters.</p></div>';
-    }
-    resultsDiv.style.display = '';
-  } else {
-    statusDiv.innerHTML = `<div class="alert alert-error">Error: ${r.data.detail || JSON.stringify(r.data)}</div>`;
-  }
+        <div class="col">
+          <label>Password</label>
+          <input type="password" id="reg-pass" placeholder="choose a password">
+        </div>
+        <div class="col">
+          <label>Contact Email</label>
+          <input type="email" id="reg-email" placeholder="you@company.com">
+        </div>
+      </div>
+      <button class="btn" onclick="register()">Register</button>
+      <span style="font-size:12px;margin-left:12px;">or <a href="#" onclick="showLogin()">Login</a></span>
+      <div id="reg-result" class="alert hidden mt"></div>
+    </div>
+  </div>
+
+  <div class="section" id="login-form">
+    <div class="section-title">Login</div>
+    <div class="section-body">
+      <div class="row">
+        <div class="col">
+          <label>Client Name</label>
+          <input type="text" id="login-name" placeholder="your-company">
+        </div>
+        <div class="col">
+          <label>Password</label>
+          <input type="password" id="login-pass" placeholder="your password">
+        </div>
+      </div>
+      <button class="btn" onclick="login()">Login</button>
+      <div id="login-result" class="alert hidden mt"></div>
+    </div>
+  </div>
+</div>
+
+<div id="dashboard-section" class="hidden">
+  <div class="section">
+    <div class="section-title">Your Account</div>
+    <div class="section-body">
+      <div class="row">
+        <div class="stat-box"><div class="num" id="d-credits">-</div><div class="lbl">Credits</div></div>
+        <div class="stat-box"><div class="num" id="d-rate">-</div><div class="lbl">Rate/h</div></div>
+        <div class="stat-box"><div class="num" id="d-max">-</div><div class="lbl">Max Results</div></div>
+        <div class="stat-box"><div class="num" id="d-client">-</div><div class="lbl">Client</div></div>
+      </div>
+      <div class="mb">
+        <label>Your API Key</label>
+        <div class="flex">
+          <div class="code" id="d-apikey" style="flex:1;"></div>
+          <button class="copy-btn" onclick="copyKey()">Copy</button>
+          <button class="btn btn-sm" onclick="regenerateKey()">Regenerate</button>
+        </div>
+      </div>
+      <div id="key-result" class="alert hidden mt"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Contact Admin</div>
+    <div class="section-body">
+      <div class="row">
+        <div class="col">
+          <label>Subject</label>
+          <input type="text" id="contact-subject" placeholder="e.g. Need more credits">
+        </div>
+        <div class="col">
+          <label>Request Type</label>
+          <select id="contact-type">
+            <option value="credit_increase">Credit Increase</option>
+            <option value="rate_increase">Rate Limit Increase</option>
+            <option value="bug_report">Bug Report</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="mb">
+        <label>Message</label>
+        <textarea id="contact-msg" placeholder="Describe what you need..."></textarea>
+      </div>
+      <button class="btn" onclick="sendContact()">Send Message</button>
+      <div id="contact-result" class="alert hidden mt"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">System Status</div>
+    <div class="section-body">
+      <div class="row" id="health-info">
+        <div class="col"><span class="status-dot" id="health-db"></span> Database</div>
+        <div class="col"><span class="status-dot" id="health-redis"></span> Redis</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const API = window.location.origin;
+
+function $(id) { return document.getElementById(id); }
+
+function show(el) { if (typeof el === 'string') el = $(el); el.classList.remove('hidden'); }
+function hide(el) { if (typeof el === 'string') el = $(el); el.classList.add('hidden'); }
+
+function getSession() {
+  try { return JSON.parse(localStorage.getItem('nexus_session') || '{}'); } catch { return {}; }
 }
 
-async function loadJobs() {
-  const params = {};
-  const skills = document.getElementById('jobsSkills').value.trim();
-  if (skills) params.skills = skills;
-  const src = document.getElementById('jobsSource').value;
-  if (src) params.source_platform = src;
-  const type = document.getElementById('jobsType').value;
-  if (type) params.job_type = type;
-  const lim = document.getElementById('jobsLimit').value;
-  if (lim) params.limit = lim;
-
-  document.getElementById('jobsBody').innerHTML = '<tr><td colspan="5" class="loading"><div class="spinner"></div> Loading...</td></tr>';
-  const r = await getJobs(params);
-  if (r.ok && r.data && r.data.length) {
-    document.getElementById('jobsBody').innerHTML = r.data.map(j => `
-      <tr>
-        <td><a href="/api/jobs/${j.job_id || j.id}" target="_blank">${j.title}</a></td>
-        <td>${j.company}</td>
-        <td>${j.location || '-'}</td>
-        <td>${j.source_platform || '-'}</td>
-        <td>${j.trust_score ? (j.trust_score * 100).toFixed(0) + '%' : '-'}</td>
-      </tr>
-    `).join('');
-  } else {
-    document.getElementById('jobsBody').innerHTML = '<tr><td colspan="5" class="empty-state">No jobs found</td></tr>';
-  }
+function setSession(data) {
+  localStorage.setItem('nexus_session', JSON.stringify(data));
 }
 
-async function doRegisterWebhook() {
-  const url = document.getElementById('whUrl').value.trim();
-  const events = document.getElementById('whEvents').value;
-  const statusDiv = document.getElementById('whStatus');
-  if (!url) { statusDiv.innerHTML = '<div class="alert alert-error">Please enter a webhook URL</div>'; return; }
-  const r = await registerWebhook(url, events);
+function clearSession() {
+  localStorage.removeItem('nexus_session');
+}
+
+async function api(method, path, body, useKey) {
+  const headers = {};
+  if (body && !(body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+  const s = getSession();
+  if (useKey !== false && s.api_key) {
+    headers['X-API-Key'] = s.api_key;
+  }
+  const opts = { method, headers };
+  if (body) {
+    opts.body = body instanceof FormData ? body : JSON.stringify(body);
+  }
+  const res = await fetch(API + path, opts);
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = { raw: text }; }
+  return { ok: res.ok, status: res.status, data };
+}
+
+async function register() {
+  const name = $('reg-name').value.trim();
+  const pass = $('reg-pass').value;
+  const email = $('reg-email').value.trim();
+  if (!name || !pass) { showAlert('reg-result', 'Name and password required', true); return; }
+  const fd = new FormData();
+  fd.set('client_name', name);
+  fd.set('password', pass);
+  fd.set('contact_email', email);
+  const r = await api('POST', '/api/register', fd, false);
   if (r.ok) {
-    statusDiv.innerHTML = '<div class="alert alert-success">Webhook registered successfully!</div>';
+    setSession({ api_key: r.data.api_key, client_id: r.data.client_id, client_name: name });
+    showAlert('reg-result', 'Registered! API key: ' + r.data.api_key, false);
+    loadDashboard();
   } else {
-    statusDiv.innerHTML = `<div class="alert alert-error">${r.data.detail || 'Registration failed'}</div>`;
+    showAlert('reg-result', r.data.detail || 'Registration failed', true);
   }
 }
 
-async function loadAbout() {
-  document.getElementById('aboutBase').textContent = API_BASE;
-  const h = await getHealth();
+async function login() {
+  const name = $('login-name').value.trim();
+  const pass = $('login-pass').value;
+  if (!name || !pass) { showAlert('login-result', 'Name and password required', true); return; }
+  const fd = new FormData();
+  fd.set('client_name', name);
+  fd.set('password', pass);
+  const r = await api('POST', '/api/login', fd, false);
+  if (r.ok) {
+    setSession({ api_key: r.data.api_key, client_id: r.data.client_id, client_name: name });
+    showAlert('login-result', 'Logged in as ' + name, false);
+    loadDashboard();
+  } else {
+    showAlert('login-result', r.data.detail || 'Login failed', true);
+  }
+}
+
+function logout() {
+  clearSession();
+  hide('dashboard-section');
+  show('login-section');
+  hide('logout-link');
+}
+
+async function loadDashboard() {
+  const s = getSession();
+  if (!s.api_key) { show('login-section'); hide('dashboard-section'); hide('logout-link'); return; }
+
+  hide('login-section');
+  show('dashboard-section');
+  show('logout-link');
+
+  const r = await api('GET', '/api/user/profile');
+  if (!r.ok) { logout(); return; }
+
+  const p = r.data;
+  $('d-client').textContent = p.client_name;
+  $('d-credits').textContent = p.credits_remaining;
+  $('d-rate').textContent = p.rate_limit_per_hour + '/h';
+  $('d-max').textContent = p.max_results_cap;
+  $('d-apikey').textContent = p.api_key;
+
+  const h = await api('GET', '/api/health', null, false);
   if (h.ok) {
-    document.getElementById('aboutDb').textContent = h.data.db ? 'Connected' : 'Down';
-    document.getElementById('aboutDb').style.color = h.data.db ? '#4ade80' : '#f87171';
-    document.getElementById('aboutRedis').textContent = h.data.redis ? 'Connected' : 'Unavailable';
-    document.getElementById('aboutRedis').style.color = h.data.redis ? '#4ade80' : '#fbbf24';
+    const db = $('health-db'); db.className = 'status-dot' + (h.data.db ? ' on' : '');
+    const rd = $('health-redis'); rd.className = 'status-dot' + (h.data.redis ? ' on' : '');
   }
 }
 
-updateUI();
+async function sendContact() {
+  const subject = $('contact-subject').value.trim();
+  const msg = $('contact-msg').value.trim();
+  if (!subject || !msg) { showAlert('contact-result', 'Subject and message required', true); return; }
+  const fd = new FormData();
+  fd.set('subject', subject);
+  fd.set('message', msg);
+  const r = await api('POST', '/api/user/contact', fd);
+  if (r.ok) {
+    showAlert('contact-result', 'Message sent to admin', false);
+    $('contact-subject').value = '';
+    $('contact-msg').value = '';
+  } else {
+    showAlert('contact-result', r.data.detail || 'Failed to send', true);
+  }
+}
+
+async function regenerateKey() {
+  if (!confirm('Regenerate API key? The old key will stop working.')) return;
+  const r = await api('POST', '/api/user/regenerate-key');
+  if (r.ok) {
+    const s = getSession();
+    s.api_key = r.data.api_key;
+    setSession(s);
+    $('d-apikey').textContent = r.data.api_key;
+    showAlert('key-result', 'New API key generated', false);
+  } else {
+    showAlert('key-result', r.data.detail || 'Failed', true);
+  }
+}
+
+function copyKey() {
+  const key = $('d-apikey').textContent;
+  navigator.clipboard.writeText(key).catch(function() {});
+  showAlert('key-result', 'Copied!', false);
+  setTimeout(function() { hide('key-result'); }, 2000);
+}
+
+function showAlert(id, msg, isErr) {
+  const el = $(id);
+  el.textContent = msg;
+  el.className = 'alert mt ' + (isErr ? 'alert-err' : 'alert-ok');
+  show(el);
+  if (!isErr) setTimeout(function() { hide(el); }, 4000);
+}
+
+function showLogin() {
+  $('login-form').scrollIntoView();
+}
+
+(function init() {
+  if (getSession().api_key) loadDashboard();
+})();
 </script>
+
 </body>
 </html>
