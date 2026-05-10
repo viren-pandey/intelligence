@@ -14,13 +14,15 @@ class Settings(BaseSettings):
     MAX_RESULTS_PER_REQUEST: int = 50
     DEBUG: bool = False
     CACHE_TTL_SECONDS: int = 21600
-    MIN_JOBS_FOR_CACHED_RESPONSE: int = 30
+    MIN_JOBS_FOR_CACHED_RESPONSE: int = 1
     FRESHNESS_CUTOFF: float = 0.6
     DEAD_LINK_CHECK_TIMEOUT: int = 5
     DEFAULT_FREE_CREDITS: int = 50
     DEFAULT_FREE_RATE_LIMIT: int = 50
     WEBHOOK_RETRY_MAX: int = 3
     ADMIN_EMAIL: str = "admin@nexus.local"
+    CRAWL_INTERVAL_MINUTES: int = 30
+    SKIP_PLAYWRIGHT_SOURCES: bool = True
 
     class Config:
         env_file = ".env"

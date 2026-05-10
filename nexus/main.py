@@ -50,9 +50,63 @@ async def lifespan(app: FastAPI):
     await init_db_pool()
     await run_migrations()
     await init_redis()
+
+    crawl_task = asyncio.create_task(_periodic_crawl())
+
     yield
+
+    crawl_task.cancel()
+    try:
+        await crawl_task
+    except asyncio.CancelledError:
+        pass
     await close_db_pool()
     await close_redis()
+
+
+async def _periodic_crawl():
+    log_ = get_logger("crawler.periodic")
+    import asyncio
+    from crawlers.dispatcher import dispatcher
+    from core.database import fetchrow
+
+    await asyncio.sleep(10)
+    log_.info(
+        "starting_periodic_crawl_loop", interval_min=settings.CRAWL_INTERVAL_MINUTES
+    )
+
+    while True:
+        try:
+            row = await fetchrow(
+                "INSERT INTO crawl_sessions (triggered_by, source_system, status) VALUES ('periodic', 'auto', 'running') RETURNING session_id",
+            )
+            session_id = str(row["session_id"])
+            log_.info("periodic_crawl_started", session_id=session_id)
+
+            broad_queries = [
+                '"intern" "2026" "apply"',
+                '"fresher" "software" "intern"',
+                '"python" "internship" "remote"',
+                '"machine learning" "intern"',
+                '"backend" "intern" "apply"',
+            ]
+
+            results = await dispatcher.quick_dispatch(session_id, broad_queries)
+
+            total = sum(r.jobs_found for r in results)
+            ok = sum(1 for r in results if r.status == "complete")
+            log_.info(
+                "periodic_crawl_done",
+                session_id=session_id,
+                sources_ok=ok,
+                total_jobs=total,
+            )
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            log_.error("periodic_crawl_failed", error=str(e))
+
+        await asyncio.sleep(settings.CRAWL_INTERVAL_MINUTES * 60)
 
 
 app = FastAPI(

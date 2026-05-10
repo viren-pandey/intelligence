@@ -29,6 +29,7 @@ from intelligence.dead_link_checker import validate_apply_links
 from intelligence.webhook_delivery import deliver_webhook
 from enrichment.company_profiler import CompanyProfiler
 from enrichment.recruiter_extractor import RecruiterExtractor
+from intelligence.groq_reranker import groq_rerank
 
 router = APIRouter()
 log = get_logger("api.routes")
@@ -198,11 +199,13 @@ async def _run_sync_analyze(request, client_id, max_results, start_time):
     log.info("inventory_check", pre_count=pre_count, use_db_only=use_db_only)
 
     all_jobs = []
+    total_raw = 0
+    sources_ok = 0
+    sources_fail = 0
 
     if use_db_only:
         db_jobs = await fetch(
-            "SELECT * FROM jobs WHERE is_expired = FALSE ORDER BY trust_score DESC LIMIT $1",
-            settings.MIN_JOBS_FOR_CACHED_RESPONSE * 2,
+            "SELECT * FROM jobs WHERE is_expired = FALSE ORDER BY trust_score DESC LIMIT 500",
         )
         for j in db_jobs:
             try:
@@ -233,9 +236,10 @@ async def _run_sync_analyze(request, client_id, max_results, start_time):
                 all_jobs.append(ej)
             except Exception:
                 continue
-        total_raw = 0
-        sources_ok = 0
-        sources_fail = 0
+        total_raw = len(all_jobs)
+
+        if pre_count is None or pre_count < 200:
+            asyncio.create_task(_background_crawl_refresh(crawl_session_id, queries))
     else:
         crawl_results = await dispatcher.dispatch(crawl_session_id, queries)
         total_raw = sum(r.jobs_found for r in crawl_results)
@@ -290,6 +294,15 @@ async def _run_sync_analyze(request, client_id, max_results, start_time):
                 low_trust_removed += 1
 
     ranked = rank_jobs(scored_jobs, max_results, request.options)
+
+    ranked = await groq_rerank(
+        request.student.model_dump(),
+        {
+            "skill_domains": ats_signals.skill_domains,
+            "normalized_skills": ats_signals.normalized_skills,
+        },
+        ranked,
+    )
 
     results_list = []
     for i, job in enumerate(ranked[:max_results]):
@@ -394,6 +407,14 @@ async def _run_sync_analyze(request, client_id, max_results, start_time):
         pass
 
     return response
+
+
+async def _background_crawl_refresh(session_id: str, queries: list[str]):
+    try:
+        log.info("background_crawl_refresh", session_id=session_id)
+        await dispatcher.quick_dispatch(session_id, queries)
+    except Exception as e:
+        log.warning("background_crawl_failed", session_id=session_id, error=str(e))
 
 
 @router.get("/api/health")

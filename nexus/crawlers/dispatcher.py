@@ -35,7 +35,27 @@ class CrawlerDispatcher:
         "discord_jobs": DiscordJobsCrawler,
     }
 
-    async def get_enabled_crawlers(self) -> list:
+    SOURCE_PRIORITY = {
+        "remoteok": 10,
+        "weworkremotely": 9,
+        "internshala_public": 8,
+        "yc_jobs": 7,
+        "github_hiring": 6,
+        "niche_boards": 5,
+        "producthunt": 4,
+        "career_pages": 3,
+        "founder_posts": 3,
+        "nitter_twitter": 2,
+        "linkedin_public": 1,
+        "google_serp": 1,
+        "discord_jobs": 1,
+    }
+
+    PLAYWRIGHT_SOURCES = {"linkedin_public", "google_serp", "discord_jobs"}
+
+    async def get_enabled_crawlers(
+        self, skip_playwright: bool = True, min_priority: int = 0
+    ) -> list:
         try:
             rows = await fetch("SELECT source_name, enabled FROM crawler_sources")
             enabled_map = {r["source_name"]: r["enabled"] for r in rows}
@@ -46,7 +66,19 @@ class CrawlerDispatcher:
         for name, cls in self.ALL_CRAWLERS.items():
             if name in enabled_map and not enabled_map[name]:
                 continue
+            if skip_playwright and name in self.PLAYWRIGHT_SOURCES:
+                continue
+            if min_priority > 0 and self.SOURCE_PRIORITY.get(name, 0) < min_priority:
+                continue
             crawler_list.append(cls)
+
+        crawler_list.sort(
+            key=lambda c: (
+                -self.SOURCE_PRIORITY.get(
+                    [k for k, v in self.ALL_CRAWLERS.items() if v == c][0], 0
+                )
+            )
+        )
         return crawler_list
 
     async def update_source_health(
@@ -77,11 +109,17 @@ class CrawlerDispatcher:
             pass
 
     async def dispatch(
-        self, session_id: str, queries: list[str]
+        self,
+        session_id: str,
+        queries: list[str],
+        skip_playwright: bool = True,
+        min_priority: int = 0,
     ) -> list[CrawlSourceResult]:
         log = get_logger("crawler.dispatcher")
 
-        crawler_classes = await self.get_enabled_crawlers()
+        crawler_classes = await self.get_enabled_crawlers(
+            skip_playwright=skip_playwright, min_priority=min_priority
+        )
         log.info(
             "dispatching_crawlers", session_id=session_id, count=len(crawler_classes)
         )
@@ -136,6 +174,13 @@ class CrawlerDispatcher:
         )
 
         return all_results
+
+    async def quick_dispatch(
+        self, session_id: str, queries: list[str]
+    ) -> list[CrawlSourceResult]:
+        return await self.dispatch(
+            session_id, queries, skip_playwright=True, min_priority=5
+        )
 
 
 dispatcher = CrawlerDispatcher()
