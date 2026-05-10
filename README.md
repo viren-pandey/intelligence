@@ -20,3 +20,4 @@ Set these as Space secrets:
 | `DATABASE_URL` | Neon PostgreSQL connection string |
 | `REDIS_URL` | Redis connection string (optional, degrades gracefully) |
 | `ADMIN_API_KEY` | Admin panel password (default: `nexus-admin-dev`) |
+
