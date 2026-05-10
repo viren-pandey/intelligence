@@ -187,11 +187,11 @@ tr.clickable { cursor: pointer; }
 
 </div>
 
-<div id="client-modal" class="modal-overlay hidden" onclick="if(event.target==this)hide('client-modal')">
+<div id="client-modal" class="modal-overlay hidden" onclick="if(event.target==this)closeModal()">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
       <span id="modal-title">Client Detail</span>
-      <button class="close" onclick="hide('client-modal')">&times;</button>
+      <button class="close" onclick="closeModal()" style="background:none;border:1px solid #fff;color:#fff;font-size:14px;cursor:pointer;padding:2px 8px;font-family:inherit;">X Close</button>
     </div>
     <div class="modal-body" id="modal-body"></div>
   </div>
@@ -380,12 +380,18 @@ function openClient(id) {
     html += '<div class="mb"><textarea id="modal-notif-msg" placeholder="Write a message to this user..."></textarea></div>';
     html += '<button class="btn btn-sm" onclick="modalSendNotif(\'' + c.id + '\')">Send Notification</button>';
     html += '<div id="modal-notif-result" class="alert hidden mt"></div>';
+    html += '<hr style="border:none;border-top:1px solid #000;margin:16px 0;">';
+    html += '<button class="btn" onclick="closeModal()">Close</button>';
 
     $('modal-body').innerHTML = html;
   });
 }
 
+function closeModal() { hide('client-modal'); }
+
 function copyText(t) { navigator.clipboard.writeText(t).catch(function(){}); }
+
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
 
 function modalAddCredits(id) {
   var amt = parseInt($('modal-add-credits').value);
