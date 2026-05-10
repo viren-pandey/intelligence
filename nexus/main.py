@@ -1,6 +1,8 @@
 import os
+import asyncio
 import hashlib
 import base64
+from datetime import datetime, timezone
 from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
@@ -83,8 +85,9 @@ async def _periodic_crawl():
             session_id = str(row["session_id"])
             log_.info("periodic_crawl_started", session_id=session_id)
 
+            year_str = str(datetime.now(timezone.utc).year)
             broad_queries = [
-                '"intern" "2026" "apply"',
+                f'"intern" "{year_str}" "apply"',
                 '"fresher" "software" "intern"',
                 '"python" "internship" "remote"',
                 '"machine learning" "intern"',

@@ -16,15 +16,16 @@ async def _do_scheduled_crawl(triggered_by: str):
     log = get_logger("scheduler.scheduled_crawl")
     log.info("scheduled_crawl_started", triggered_by=triggered_by)
 
+    year_str = str(datetime.now(timezone.utc).year)
     broad_queries = [
-        '"intern" "2025" "apply"',
+        f'"intern" "{year_str}" "apply"',
         '"fresher" "software" "intern"',
         '"python" "internship" "remote"',
-        '"machine learning" "intern" "2025"',
+        f'"machine learning" "intern" "{year_str}"',
         '"backend" "intern" "apply"',
         '"frontend" "intern" "remote"',
         '"data science" "internship"',
-        '"devops" "intern" "2025"',
+        f'"devops" "intern" "{year_str}"',
         '"research" "intern" "AI"',
         '"software developer" "fresher"',
     ]

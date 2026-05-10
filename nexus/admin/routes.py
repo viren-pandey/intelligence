@@ -747,8 +747,9 @@ async def trigger_crawl():
     session_id = str(row["session_id"])
     from crawlers.dispatcher import dispatcher
 
+    year_str = str(datetime.now(timezone.utc).year)
     broad_queries = [
-        '"intern" "2025" "apply"',
+        f'"intern" "{year_str}" "apply"',
         '"fresher" "software" "intern"',
         '"python" "internship" "remote"',
         '"machine learning" "intern"',

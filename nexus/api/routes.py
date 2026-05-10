@@ -848,8 +848,9 @@ async def admin_trigger_crawl(x_api_key: str = Header(..., alias="X-API-Key")):
         "INSERT INTO crawl_sessions (triggered_by, source_system, status) VALUES ('admin_api', 'admin', 'running') RETURNING session_id",
     )
     session_id = str(row["session_id"])
+    year_str = str(datetime.now(timezone.utc).year)
     broad_queries = [
-        '"intern" "2025" "apply"',
+        f'"intern" "{year_str}" "apply"',
         '"fresher" "software" "intern"',
         '"python" "internship" "remote"',
         '"machine learning" "intern"',
