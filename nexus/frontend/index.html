@@ -16,6 +16,7 @@ a:hover { background: #000; color: #fff; }
 .content { max-width: 960px; margin: 0 auto; padding: 20px; }
 .section { border: 1px solid #000; margin-bottom: 20px; }
 .section-title { background: #000; color: #fff; padding: 6px 12px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.section-title .badge { float: right; background: #fff; color: #000; padding: 0 6px; font-size: 11px; }
 .section-body { padding: 16px; }
 .row { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
 .col { flex: 1; min-width: 200px; }
@@ -23,11 +24,9 @@ label { display: block; font-size: 11px; font-weight: 700; text-transform: upper
 input, select, textarea { font-family: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid #000; background: #fff; color: #000; width: 100%; border-radius: 0; }
 input:focus, select:focus, textarea:focus { outline: 2px solid #000; }
 textarea { min-height: 60px; resize: vertical; }
-.btn { font-family: inherit; font-size: 12px; padding: 6px 14px; border: 1px solid #000; background: #fff; color: #000; cursor: pointer; border-radius: 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+.btn { font-family: inherit; font-size: 12px; padding: 6px 14px; border: 1px solid #000; background: #fff; color: #000; cursor: pointer; border-radius: 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; display: inline-block; }
 .btn:hover { background: #000; color: #fff; }
 .btn-sm { padding: 3px 8px; font-size: 11px; }
-.btn-red { border-color: #000; }
-.btn-red:hover { background: #000; color: #fff; }
 .stat-box { border: 1px solid #000; padding: 10px; text-align: center; min-width: 120px; }
 .stat-box .num { font-size: 24px; font-weight: 700; }
 .stat-box .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -39,16 +38,24 @@ tr:hover { background: #f5f5f5; }
 .alert { border: 1px solid #000; padding: 8px 12px; margin: 8px 0; font-size: 12px; }
 .alert-ok { background: #fff; }
 .alert-err { background: #000; color: #fff; }
+.alert-info { background: #f5f5f5; }
 .hidden { display: none; }
 .mt { margin-top: 12px; }
 .mb { margin-bottom: 12px; }
 .flex { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.gap { gap: 12px; }
-.w-full { width: 100%; }
 .copy-btn { cursor: pointer; border: 1px solid #000; padding: 2px 8px; font-size: 11px; background: #fff; font-family: inherit; }
 .copy-btn:hover { background: #000; color: #fff; }
 .status-dot { display: inline-block; width: 8px; height: 8px; border: 1px solid #000; margin-right: 4px; }
 .status-dot.on { background: #000; }
+.tabs { display: flex; gap: 0; margin-bottom: 0; border-bottom: 1px solid #000; }
+.tab { padding: 6px 16px; border: 1px solid #000; border-bottom: none; cursor: pointer; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: #fff; margin-bottom: -1px; }
+.tab:hover { background: #f5f5f5; }
+.tab.active { background: #000; color: #fff; }
+.page { display: none; }
+.page.active { display: block; }
+.notif-unread { font-weight: 700; }
+.notif-read { opacity: 0.6; }
+.tiny-text { font-size: 11px; color: #555; }
 </style>
 </head>
 <body>
@@ -87,7 +94,6 @@ tr:hover { background: #f5f5f5; }
       <div id="reg-result" class="alert hidden mt"></div>
     </div>
   </div>
-
   <div class="section" id="login-form">
     <div class="section-title">Login</div>
     <div class="section-body">
@@ -108,29 +114,36 @@ tr:hover { background: #f5f5f5; }
 </div>
 
 <div id="dashboard-section" class="hidden">
-  <div class="section">
-    <div class="section-title">Your Account</div>
-    <div class="section-body">
-      <div class="row">
-        <div class="stat-box"><div class="num" id="d-credits">-</div><div class="lbl">Credits</div></div>
-        <div class="stat-box"><div class="num" id="d-rate">-</div><div class="lbl">Rate/h</div></div>
-        <div class="stat-box"><div class="num" id="d-max">-</div><div class="lbl">Max Results</div></div>
-        <div class="stat-box"><div class="num" id="d-client">-</div><div class="lbl">Client</div></div>
-      </div>
-      <div class="mb">
-        <label>Your API Key</label>
-        <div class="flex">
-          <div class="code" id="d-apikey" style="flex:1;"></div>
-          <button class="copy-btn" onclick="copyKey()">Copy</button>
-          <button class="btn btn-sm" onclick="regenerateKey()">Regenerate</button>
-        </div>
-      </div>
-      <div id="key-result" class="alert hidden mt"></div>
-    </div>
-  </div>
 
-  <div class="section">
-    <div class="section-title">Contact Admin</div>
+<div class="section">
+  <div class="section-title">Your Account</div>
+  <div class="section-body">
+    <div class="row">
+      <div class="stat-box"><div class="num" id="d-credits">-</div><div class="lbl">Credits</div></div>
+      <div class="stat-box"><div class="num" id="d-rate">-</div><div class="lbl">Rate/h</div></div>
+      <div class="stat-box"><div class="num" id="d-max">-</div><div class="lbl">Max Results</div></div>
+      <div class="stat-box"><div class="num" id="d-client">-</div><div class="lbl">Client</div></div>
+    </div>
+    <div class="mb">
+      <label>Your API Key</label>
+      <div class="flex">
+        <div class="code" id="d-apikey" style="flex:1;"></div>
+        <button class="copy-btn" onclick="copyKey()">Copy</button>
+        <button class="btn btn-sm" onclick="regenerateKey()">Regenerate</button>
+      </div>
+    </div>
+    <div id="key-result" class="alert hidden mt"></div>
+  </div>
+</div>
+
+<div class="tabs" id="user-tabs">
+  <div class="tab active" onclick="switchUserTab('contact')">Contact Admin</div>
+  <div class="tab" onclick="switchUserTab('notifications')">Notifications <span id="notif-count" style="font-weight:700;"></span></div>
+  <div class="tab" onclick="switchUserTab('requests')">My Requests</div>
+</div>
+
+<div id="user-page-contact" class="page active">
+  <div class="section" style="border-top:none;">
     <div class="section-body">
       <div class="row">
         <div class="col">
@@ -155,73 +168,78 @@ tr:hover { background: #f5f5f5; }
       <div id="contact-result" class="alert hidden mt"></div>
     </div>
   </div>
+</div>
 
-  <div class="section">
-    <div class="section-title">System Status</div>
-    <div class="section-body">
-      <div class="row" id="health-info">
-        <div class="col"><span class="status-dot" id="health-db"></span> Database</div>
-        <div class="col"><span class="status-dot" id="health-redis"></span> Redis</div>
-      </div>
+<div id="user-page-notifications" class="page">
+  <div class="section" style="border-top:none;">
+    <div class="section-body" id="notifications-list">
+      <div class="alert">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<div id="user-page-requests" class="page">
+  <div class="section" style="border-top:none;">
+    <div class="section-body" id="requests-list">
+      <div class="alert">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">System Status</div>
+  <div class="section-body">
+    <div class="row" id="health-info">
+      <div class="col"><span class="status-dot" id="health-db"></span> Database</div>
+      <div class="col"><span class="status-dot" id="health-redis"></span> Redis</div>
     </div>
   </div>
 </div>
 
 </div>
 
+</div>
+
 <script>
-const API = window.location.origin;
+var API = window.location.origin;
 
 function $(id) { return document.getElementById(id); }
-
 function show(el) { if (typeof el === 'string') el = $(el); el.classList.remove('hidden'); }
 function hide(el) { if (typeof el === 'string') el = $(el); el.classList.add('hidden'); }
 
 function getSession() {
   try { return JSON.parse(localStorage.getItem('nexus_session') || '{}'); } catch { return {}; }
 }
-
-function setSession(data) {
-  localStorage.setItem('nexus_session', JSON.stringify(data));
-}
-
-function clearSession() {
-  localStorage.removeItem('nexus_session');
-}
+function setSession(data) { localStorage.setItem('nexus_session', JSON.stringify(data)); }
+function clearSession() { localStorage.removeItem('nexus_session'); }
 
 async function api(method, path, body, useKey) {
-  const headers = {};
-  if (body && !(body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-  }
-  const s = getSession();
-  if (useKey !== false && s.api_key) {
-    headers['X-API-Key'] = s.api_key;
-  }
-  const opts = { method, headers };
-  if (body) {
-    opts.body = body instanceof FormData ? body : JSON.stringify(body);
-  }
-  const res = await fetch(API + path, opts);
-  const text = await res.text();
-  let data;
+  var headers = {};
+  if (body && !(body instanceof FormData)) headers['Content-Type'] = 'application/json';
+  var s = getSession();
+  if (useKey !== false && s.api_key) headers['X-API-Key'] = s.api_key;
+  var opts = { method: method, headers: headers };
+  if (body) opts.body = body instanceof FormData ? body : JSON.stringify(body);
+  var res = await fetch(API + path, opts);
+  var text = await res.text();
+  var data;
   try { data = JSON.parse(text); } catch { data = { raw: text }; }
-  return { ok: res.ok, status: res.status, data };
+  return { ok: res.ok, status: res.status, data: data };
 }
 
 async function register() {
-  const name = $('reg-name').value.trim();
-  const pass = $('reg-pass').value;
-  const email = $('reg-email').value.trim();
+  var name = $('reg-name').value.trim();
+  var pass = $('reg-pass').value;
+  var email = $('reg-email').value.trim();
   if (!name || !pass) { showAlert('reg-result', 'Name and password required', true); return; }
-  const fd = new FormData();
+  var fd = new FormData();
   fd.set('client_name', name);
   fd.set('password', pass);
   fd.set('contact_email', email);
-  const r = await api('POST', '/api/register', fd, false);
+  var r = await api('POST', '/api/register', fd, false);
   if (r.ok) {
     setSession({ api_key: r.data.api_key, client_id: r.data.client_id, client_name: name });
-    showAlert('reg-result', 'Registered! API key: ' + r.data.api_key, false);
+    showAlert('reg-result', 'Registered!', false);
     loadDashboard();
   } else {
     showAlert('reg-result', r.data.detail || 'Registration failed', true);
@@ -229,13 +247,13 @@ async function register() {
 }
 
 async function login() {
-  const name = $('login-name').value.trim();
-  const pass = $('login-pass').value;
+  var name = $('login-name').value.trim();
+  var pass = $('login-pass').value;
   if (!name || !pass) { showAlert('login-result', 'Name and password required', true); return; }
-  const fd = new FormData();
+  var fd = new FormData();
   fd.set('client_name', name);
   fd.set('password', pass);
-  const r = await api('POST', '/api/login', fd, false);
+  var r = await api('POST', '/api/login', fd, false);
   if (r.ok) {
     setSession({ api_key: r.data.api_key, client_id: r.data.client_id, client_name: name });
     showAlert('login-result', 'Logged in as ' + name, false);
@@ -253,38 +271,39 @@ function logout() {
 }
 
 async function loadDashboard() {
-  const s = getSession();
+  var s = getSession();
   if (!s.api_key) { show('login-section'); hide('dashboard-section'); hide('logout-link'); return; }
-
   hide('login-section');
   show('dashboard-section');
   show('logout-link');
 
-  const r = await api('GET', '/api/user/profile');
+  var r = await api('GET', '/api/user/profile');
   if (!r.ok) { logout(); return; }
-
-  const p = r.data;
+  var p = r.data;
   $('d-client').textContent = p.client_name;
   $('d-credits').textContent = p.credits_remaining;
   $('d-rate').textContent = p.rate_limit_per_hour + '/h';
   $('d-max').textContent = p.max_results_cap;
   $('d-apikey').textContent = p.api_key;
 
-  const h = await api('GET', '/api/health', null, false);
+  var h = await api('GET', '/api/health', null, false);
   if (h.ok) {
-    const db = $('health-db'); db.className = 'status-dot' + (h.data.db ? ' on' : '');
-    const rd = $('health-redis'); rd.className = 'status-dot' + (h.data.redis ? ' on' : '');
+    $('health-db').className = 'status-dot' + (h.data.db ? ' on' : '');
+    $('health-redis').className = 'status-dot' + (h.data.redis ? ' on' : '');
   }
+
+  loadNotifications();
+  loadUserRequests();
 }
 
 async function sendContact() {
-  const subject = $('contact-subject').value.trim();
-  const msg = $('contact-msg').value.trim();
+  var subject = $('contact-subject').value.trim();
+  var msg = $('contact-msg').value.trim();
   if (!subject || !msg) { showAlert('contact-result', 'Subject and message required', true); return; }
-  const fd = new FormData();
+  var fd = new FormData();
   fd.set('subject', subject);
   fd.set('message', msg);
-  const r = await api('POST', '/api/user/contact', fd);
+  var r = await api('POST', '/api/user/contact', fd);
   if (r.ok) {
     showAlert('contact-result', 'Message sent to admin', false);
     $('contact-subject').value = '';
@@ -296,9 +315,9 @@ async function sendContact() {
 
 async function regenerateKey() {
   if (!confirm('Regenerate API key? The old key will stop working.')) return;
-  const r = await api('POST', '/api/user/regenerate-key');
+  var r = await api('POST', '/api/user/regenerate-key');
   if (r.ok) {
-    const s = getSession();
+    var s = getSession();
     s.api_key = r.data.api_key;
     setSession(s);
     $('d-apikey').textContent = r.data.api_key;
@@ -309,23 +328,85 @@ async function regenerateKey() {
 }
 
 function copyKey() {
-  const key = $('d-apikey').textContent;
+  var key = $('d-apikey').textContent;
   navigator.clipboard.writeText(key).catch(function() {});
   showAlert('key-result', 'Copied!', false);
   setTimeout(function() { hide('key-result'); }, 2000);
 }
 
+function switchUserTab(name) {
+  var tabs = document.querySelectorAll('#user-tabs .tab');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  var pages = document.querySelectorAll('[id^="user-page-"]');
+  pages.forEach(function(p) { p.classList.remove('active'); });
+  var idx = { contact: 0, notifications: 1, requests: 2 };
+  if (tabs[idx[name]]) tabs[idx[name]].classList.add('active');
+  var pg = $('user-page-' + name);
+  if (pg) pg.classList.add('active');
+  if (name === 'notifications') loadNotifications();
+  if (name === 'requests') loadUserRequests();
+}
+
+async function loadNotifications() {
+  var r = await api('GET', '/api/user/notifications');
+  if (!r.ok) return;
+  var notes = r.data.notifications || [];
+  var unread = notes.filter(function(n) { return !n.is_read; }).length;
+  var countEl = $('notif-count');
+  countEl.textContent = unread > 0 ? '(' + unread + ' new)' : '';
+  if (notes.length === 0) {
+    $('notifications-list').innerHTML = '<div class="alert">No notifications from admin yet.</div>';
+    return;
+  }
+  var html = '';
+  notes.forEach(function(n) {
+    var cls = n.is_read ? 'notif-read' : 'notif-unread';
+    html += '<div class="' + cls + '" style="border:1px solid #000;padding:10px;margin-bottom:8px;">';
+    html += '<div class="flex" style="justify-content:space-between;">';
+    html += '<strong>' + (n.title || 'Notification') + '</strong>';
+    html += '<span class="tiny-text">' + (n.created_at || '').substring(0, 16) + '</span>';
+    html += '</div>';
+    html += '<div style="font-size:13px;margin-top:4px;">' + (n.message || '') + '</div>';
+    if (!n.is_read) {
+      html += '<button class="btn btn-sm mt" onclick="markRead(\'' + n.id + '\')">Mark Read</button>';
+    }
+    html += '</div>';
+  });
+  $('notifications-list').innerHTML = html;
+}
+
+async function markRead(id) {
+  await api('POST', '/api/user/notifications/' + id + '/read');
+  loadNotifications();
+}
+
+async function loadUserRequests() {
+  var r = await api('GET', '/api/user/requests');
+  if (!r.ok) { $('requests-list').innerHTML = '<div class="alert">Failed to load</div>'; return; }
+  var reqs = r.data.requests || [];
+  if (reqs.length === 0) { $('requests-list').innerHTML = '<div class="alert">No requests yet. Use the Contact tab to send one.</div>'; return; }
+  var html = '<table><tr><th>Date</th><th>Subject</th><th>Status</th><th>Admin Response</th></tr>';
+  reqs.forEach(function(req) {
+    html += '<tr>';
+    html += '<td style="font-size:11px;">' + (req.created_at || '').substring(0, 16) + '</td>';
+    html += '<td>' + (req.subject || '-') + '</td>';
+    html += '<td>' + (req.status || '-') + '</td>';
+    html += '<td style="font-size:11px;max-width:200px;">' + (req.admin_notes || (req.status === 'resolved' ? 'Resolved' : '-')) + '</td>';
+    html += '</tr>';
+  });
+  html += '</table>';
+  $('requests-list').innerHTML = html;
+}
+
 function showAlert(id, msg, isErr) {
-  const el = $(id);
+  var el = $(id);
   el.textContent = msg;
   el.className = 'alert mt ' + (isErr ? 'alert-err' : 'alert-ok');
   show(el);
   if (!isErr) setTimeout(function() { hide(el); }, 4000);
 }
 
-function showLogin() {
-  $('login-form').scrollIntoView();
-}
+function showLogin() { $('login-form').scrollIntoView(); }
 
 (function init() {
   if (getSession().api_key) loadDashboard();

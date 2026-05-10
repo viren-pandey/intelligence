@@ -867,3 +867,107 @@ async def admin_session_detail(
         "session": _serialize(session),
         "sources": [_serialize(s) for s in sources],
     }
+
+
+@router.get("/api/admin/clients/{client_id}")
+async def admin_client_detail(
+    client_id: str, x_api_key: str = Header(..., alias="X-API-Key")
+):
+    await verify_admin_key(x_api_key)
+    row = await fetchrow("SELECT * FROM api_clients WHERE id = $1::uuid", client_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Client not found")
+    req_count = (
+        await fetchval(
+            "SELECT COUNT(*) FROM analyze_requests WHERE api_client_id = $1::uuid",
+            client_id,
+        )
+        or 0
+    )
+    recent_reqs = await fetch(
+        "SELECT request_id, status, results_count, created_at, processing_time_ms FROM analyze_requests WHERE api_client_id = $1::uuid ORDER BY created_at DESC LIMIT 10",
+        client_id,
+    )
+    notes_count = (
+        await fetchval(
+            "SELECT COUNT(*) FROM notifications WHERE client_id = $1::uuid AND is_read = FALSE",
+            client_id,
+        )
+        or 0
+    )
+    data = _serialize(row)
+    data["total_requests"] = req_count
+    data["recent_requests"] = [_serialize(r) for r in recent_reqs]
+    data["unread_notifications"] = notes_count
+    return data
+
+
+@router.post("/api/admin/clients/{client_id}/message")
+async def admin_send_message(
+    client_id: str,
+    message: str = Form(...),
+    title: str = Form("New message from admin"),
+    x_api_key: str = Header(..., alias="X-API-Key"),
+):
+    await verify_admin_key(x_api_key)
+    await execute(
+        "INSERT INTO notifications (client_id, title, message) VALUES ($1::uuid, $2, $3)",
+        client_id,
+        title,
+        message,
+    )
+    return {"status": "sent"}
+
+
+@router.get("/api/admin/jobs-summary")
+async def admin_jobs_summary(x_api_key: str = Header(..., alias="X-API-Key")):
+    await verify_admin_key(x_api_key)
+    total = await fetchval("SELECT COUNT(*) FROM jobs") or 0
+    active = await fetchval("SELECT COUNT(*) FROM jobs WHERE is_expired = FALSE") or 0
+    by_source = await fetch(
+        "SELECT source_platform, COUNT(*) as cnt FROM jobs WHERE is_expired = FALSE GROUP BY source_platform ORDER BY cnt DESC"
+    )
+    recent = await fetch(
+        "SELECT job_id, title, company, trust_score, source_platform, created_at FROM jobs WHERE is_expired = FALSE ORDER BY created_at DESC LIMIT 20"
+    )
+    return {
+        "total": total,
+        "active": active,
+        "by_source": [
+            {"source": r["source_platform"], "count": r["cnt"]} for r in by_source
+        ],
+        "recent": [_serialize(r) for r in recent],
+    }
+
+
+@router.get("/api/user/notifications")
+async def user_notifications(x_api_key: str = Header(..., alias="X-API-Key")):
+    c = await verify_api_key(x_api_key)
+    rows = await fetch(
+        "SELECT * FROM notifications WHERE client_id = $1::uuid ORDER BY created_at DESC LIMIT 50",
+        c["id"],
+    )
+    return {"notifications": [_serialize(r) for r in rows]}
+
+
+@router.post("/api/user/notifications/{note_id}/read")
+async def mark_notification_read(
+    note_id: str, x_api_key: str = Header(..., alias="X-API-Key")
+):
+    c = await verify_api_key(x_api_key)
+    await execute(
+        "UPDATE notifications SET is_read = TRUE WHERE id = $1::uuid AND client_id = $2::uuid",
+        note_id,
+        c["id"],
+    )
+    return {"status": "ok"}
+
+
+@router.get("/api/user/requests")
+async def user_requests(x_api_key: str = Header(..., alias="X-API-Key")):
+    c = await verify_api_key(x_api_key)
+    rows = await fetch(
+        "SELECT * FROM contact_requests WHERE client_id = $1::uuid ORDER BY created_at DESC LIMIT 50",
+        c["id"],
+    )
+    return {"requests": [_serialize(r) for r in rows]}

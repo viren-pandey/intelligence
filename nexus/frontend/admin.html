@@ -22,13 +22,16 @@ label { display: block; font-size: 11px; font-weight: 700; text-transform: upper
 input, select, textarea { font-family: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid #000; background: #fff; color: #000; width: 100%; border-radius: 0; }
 input:focus, select:focus { outline: 2px solid #000; }
 textarea { min-height: 60px; resize: vertical; }
-.btn { font-family: inherit; font-size: 12px; padding: 6px 14px; border: 1px solid #000; background: #fff; color: #000; cursor: pointer; border-radius: 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+.btn { font-family: inherit; font-size: 12px; padding: 6px 14px; border: 1px solid #000; background: #fff; color: #000; cursor: pointer; border-radius: 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; display: inline-block; }
 .btn:hover { background: #000; color: #fff; }
 .btn-sm { padding: 3px 8px; font-size: 11px; }
+.btn-link { border: none; background: none; text-decoration: underline; padding: 0; font-size: 12px; cursor: pointer; font-family: inherit; }
+.btn-link:hover { background: #000; color: #fff; }
 table { border-collapse: collapse; width: 100%; font-size: 12px; }
 th, td { border: 1px solid #000; padding: 5px 8px; text-align: left; }
 th { background: #000; color: #fff; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
 tr:hover { background: #f5f5f5; }
+tr.clickable { cursor: pointer; }
 .code { font-family: inherit; background: #f5f5f5; border: 1px solid #000; padding: 6px 8px; font-size: 12px; word-break: break-all; }
 .alert { border: 1px solid #000; padding: 8px 12px; margin: 8px 0; font-size: 12px; }
 .alert-ok { background: #fff; }
@@ -43,11 +46,19 @@ tr:hover { background: #f5f5f5; }
 .tab.active { background: #000; color: #fff; }
 .page { display: none; }
 .page.active { display: block; }
-.tag { display: inline-block; border: 1px solid #000; padding: 1px 6px; font-size: 10px; margin: 1px; }
 .status-ind { display: inline-block; width: 8px; height: 8px; border: 1px solid #000; border-radius: 50%; margin-right: 4px; }
 .status-ind.on { background: #000; }
-.inline-form { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.inline-form input, .inline-form select { width: auto; min-width: 80px; }
+
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.modal { background: #fff; border: 2px solid #000; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; }
+.modal-header { background: #000; color: #fff; padding: 10px 16px; font-size: 14px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+.modal-header .close { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; font-family: inherit; }
+.modal-body { padding: 16px; }
+.field-group { margin-bottom: 6px; }
+.field-group .field-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; color: #555; }
+.field-group .field-value { font-size: 13px; }
+.inline-edit { display: flex; gap: 4px; align-items: center; }
+.inline-edit input { width: 60px; padding: 2px 4px; font-size: 12px; }
 </style>
 </head>
 <body>
@@ -83,6 +94,7 @@ tr:hover { background: #f5f5f5; }
 <div class="tabs" id="tabs">
   <div class="tab active" onclick="switchTab('clients')">Clients</div>
   <div class="tab" onclick="switchTab('messages')">Messages</div>
+  <div class="tab" onclick="switchTab('jobs')">Jobs</div>
   <div class="tab" onclick="switchTab('crawlers')">Crawlers</div>
 </div>
 
@@ -127,7 +139,7 @@ tr:hover { background: #f5f5f5; }
     <div class="section-title">User Messages</div>
     <div class="section-body">
       <div class="flex mb">
-        <button class="btn btn-sm" onclick="loadMessages('pending')" id="msg-filter-pending">Pending</button>
+        <button class="btn btn-sm" onclick="loadMessages('pending')">Pending</button>
         <button class="btn btn-sm" onclick="loadMessages('resolved')">Resolved</button>
         <button class="btn btn-sm" onclick="loadMessages('all')">All</button>
       </div>
@@ -137,16 +149,31 @@ tr:hover { background: #f5f5f5; }
   </div>
 </div>
 
+<div id="page-jobs" class="page">
+  <div class="section">
+    <div class="section-title">Job Overview</div>
+    <div class="section-body">
+      <div id="jobs-loading" class="alert">Loading...</div>
+      <div id="jobs-summary"></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Recent Jobs</div>
+    <div class="section-body">
+      <div id="jobs-list"></div>
+    </div>
+  </div>
+</div>
+
 <div id="page-crawlers" class="page">
   <div class="section">
     <div class="section-title">Trigger Crawl</div>
     <div class="section-body">
-      <p style="font-size:12px;margin-bottom:10px;">Launches all enabled crawlers (RemoteOK, WeWorkRemotely, Internshala, GitHub, LinkedIn public, etc.) to discover new job listings.</p>
+      <p style="font-size:12px;margin-bottom:10px;">Launches all enabled crawlers to discover new job listings.</p>
       <button class="btn" onclick="triggerCrawl()" id="crawl-btn">Release Crawlers</button>
       <div id="crawl-result" class="alert hidden mt"></div>
     </div>
   </div>
-
   <div class="section">
     <div class="section-title">Recent Crawl Sessions</div>
     <div class="section-body">
@@ -160,50 +187,48 @@ tr:hover { background: #f5f5f5; }
 
 </div>
 
+<div id="client-modal" class="modal-overlay hidden" onclick="closeClientModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span id="modal-title">Client Detail</span>
+      <button class="close" onclick="closeClientModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
 <script>
-const API = window.location.origin;
+var API = window.location.origin;
+var ADMIN_KEY = '';
 
 function $(id) { return document.getElementById(id); }
-
 function show(el) { if (typeof el === 'string') el = $(el); el.classList.remove('hidden'); }
 function hide(el) { if (typeof el === 'string') el = $(el); el.classList.add('hidden'); }
-
-var ADMIN_KEY = '';
 
 function getSession() {
   try { return JSON.parse(localStorage.getItem('nexus_admin_session') || '{}'); } catch { return {}; }
 }
-
-function setSession(data) {
-  localStorage.setItem('nexus_admin_session', JSON.stringify(data));
-}
-
-function clearSession() {
-  localStorage.removeItem('nexus_admin_session');
-}
+function setSession(data) { localStorage.setItem('nexus_admin_session', JSON.stringify(data)); }
+function clearSession() { localStorage.removeItem('nexus_admin_session'); }
 
 async function api(method, path, body) {
-  const headers = {};
-  if (body && !(body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-  }
-  if (ADMIN_KEY) {
-    headers['X-API-Key'] = ADMIN_KEY;
-  }
-  const opts = { method, headers };
+  var headers = {};
+  if (body && !(body instanceof FormData)) headers['Content-Type'] = 'application/json';
+  if (ADMIN_KEY) headers['X-API-Key'] = ADMIN_KEY;
+  var opts = { method: method, headers: headers };
   if (body) opts.body = body instanceof FormData ? body : JSON.stringify(body);
-  const res = await fetch(API + path, opts);
-  const text = await res.text();
-  let data;
+  var res = await fetch(API + path, opts);
+  var text = await res.text();
+  var data;
   try { data = JSON.parse(text); } catch { data = { raw: text }; }
-  return { ok: res.ok, status: res.status, data };
+  return { ok: res.ok, status: res.status, data: data };
 }
 
 async function authAdmin() {
-  const key = $('admin-key').value.trim();
+  var key = $('admin-key').value.trim();
   if (!key) { showAlert('auth-result', 'Enter the admin API key', true); return; }
   ADMIN_KEY = key;
-  const r = await api('GET', '/api/user/profile');
+  var r = await api('GET', '/api/user/profile');
   if (!r.ok || r.data.client_name !== 'admin') {
     ADMIN_KEY = '';
     showAlert('auth-result', 'Invalid admin API key', true);
@@ -216,26 +241,29 @@ async function authAdmin() {
   loadClients();
   loadMessages('pending');
   loadSessions();
+  loadJobsSummary();
 }
 
 function logout() {
   ADMIN_KEY = '';
   clearSession();
   hide('admin-panel');
-  show('auth-section');
   hide('logout-link');
+  show('auth-section');
   $('admin-key').value = '';
 }
 
 function switchTab(name) {
-  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
   var tabs = document.querySelectorAll('.tab');
-  var pages = { clients: 0, messages: 1, crawlers: 2 };
-  tabs[pages[name]].classList.add('active');
-  $('page-' + name).classList.add('active');
+  var pages = document.querySelectorAll('.page');
+  tabs.forEach(function(t) { t.classList.remove('active'); });
+  pages.forEach(function(p) { p.classList.remove('active'); });
+  var idx = { clients: 0, messages: 1, jobs: 2, crawlers: 3 };
+  if (tabs[idx[name]]) tabs[idx[name]].classList.add('active');
+  if ($('page-' + name)) $('page-' + name).classList.add('active');
   if (name === 'clients') loadClients();
   if (name === 'messages') loadMessages('pending');
+  if (name === 'jobs') loadJobsSummary();
   if (name === 'crawlers') loadSessions();
 }
 
@@ -243,25 +271,20 @@ async function loadClients() {
   show('clients-loading');
   var r = await api('GET', '/api/admin/clients');
   hide('clients-loading');
-  if (!r.ok) { $('clients-table').innerHTML = '<div class="alert alert-err">Failed to load clients</div>'; return; }
+  if (!r.ok) { $('clients-table').innerHTML = '<div class="alert alert-err">Failed to load</div>'; return; }
   var html = '<table><tr><th>Name</th><th>API Key</th><th>Credits</th><th>Rate/h</th><th>Max</th><th>Active</th><th>Actions</th></tr>';
   r.data.clients.forEach(function(c) {
-    html += '<tr>';
+    html += '<tr class="clickable" onclick="openClient(\'' + c.id + '\')">';
     html += '<td>' + (c.client_name || '') + '</td>';
     html += '<td style="font-size:11px;">' + (c.api_key ? c.api_key.substring(0, 16) + '...' : '-') + '</td>';
+    html += '<td>' + (c.credits_remaining || 0) + '</td>';
+    html += '<td>' + (c.rate_limit_per_hour || 0) + '</td>';
+    html += '<td>' + (c.max_results_cap || 0) + '</td>';
+    html += '<td>' + (c.is_active ? 'Yes' : 'No') + '</td>';
     html += '<td>';
-    html += '<form class="inline-form" onsubmit="return updateClient(\'' + c.id + '\', this)">';
-    html += '<input type="number" name="credits" value="' + (c.credits_remaining || 0) + '" style="width:60px;">';
-    html += '</td>';
-    html += '<td><input type="number" name="rate_limit" value="' + (c.rate_limit_per_hour || 0) + '" style="width:60px;"></td>';
-    html += '<td><input type="number" name="max_results" value="' + (c.max_results_cap || 0) + '" style="width:50px;"></td>';
-    html += '<td>' + (c.is_active ? '<span class="status-ind on"></span>Yes' : '<span class="status-ind"></span>No') + '</td>';
-    html += '<td>';
-    html += '<input type="hidden" name="is_active" value="' + (c.is_active ? 'true' : 'false') + '">';
-    html += '<button class="btn btn-sm" type="submit">Update</button>';
-    html += '</form> ';
+    html += '<button class="btn btn-sm" onclick="event.stopPropagation();updateCredits(\'' + c.id + '\', \'' + c.client_name + '\')">+Credits</button> ';
     if (c.client_name !== 'admin') {
-      html += '<button class="btn btn-sm" onclick="deleteClient(\'' + c.id + '\', \'' + c.client_name + '\')">Delete</button>';
+      html += '<button class="btn btn-sm" onclick="event.stopPropagation();deleteClient(\'' + c.id + '\', \'' + c.client_name + '\')">Delete</button>';
     }
     html += '</td></tr>';
   });
@@ -287,35 +310,140 @@ async function createClient() {
   }
 }
 
-async function updateClient(id, form) {
-  var fd = new FormData(form);
-  fd.set('credits', parseInt(fd.get('credits')) || 0);
-  fd.set('rate_limit', parseInt(fd.get('rate_limit')) || 0);
-  fd.set('max_results', parseInt(fd.get('max_results')) || 0);
-  var r = await api('PATCH', '/api/admin/clients/' + id, fd);
-  if (r.ok) {
-    loadClients();
-  }
-  return false;
+function updateCredits(id, name) {
+  var amt = prompt('Add credits to "' + name + '":', '100');
+  if (amt === null) return;
+  amt = parseInt(amt);
+  if (isNaN(amt) || amt <= 0) { showAlert('create-result', 'Enter a positive number', true); return; }
+  var fd = new FormData();
+  fd.set('credits', amt);
+  api('PATCH', '/api/admin/clients/' + id, fd).then(function(r) {
+    if (r.ok) { showAlert('create-result', 'Added ' + amt + ' credits to ' + name, false); loadClients(); }
+    else { showAlert('create-result', r.data.detail || 'Failed', true); }
+  });
 }
 
 async function deleteClient(id, name) {
   if (!confirm('Delete client "' + name + '"? This cannot be undone.')) return;
   var r = await api('DELETE', '/api/admin/clients/' + id);
-  if (r.ok) {
-    loadClients();
-  }
+  if (r.ok) { loadClients(); }
+}
+
+function openClient(id) {
+  show('client-modal');
+  $('modal-body').innerHTML = '<div class="alert">Loading...</div>';
+  $('modal-title').textContent = 'Client Detail';
+  api('GET', '/api/admin/clients/' + id).then(function(r) {
+    if (!r.ok) { $('modal-body').innerHTML = '<div class="alert alert-err">Failed to load</div>'; return; }
+    var c = r.data;
+    var html = '';
+    html += '<div class="row">';
+    html += '<div class="col"><div class="field-group"><div class="field-label">Client Name</div><div class="field-value">' + (c.client_name || '-') + '</div></div></div>';
+    html += '<div class="col"><div class="field-group"><div class="field-label">Contact Email</div><div class="field-value">' + (c.contact_email || '-') + '</div></div></div>';
+    html += '</div>';
+    html += '<div class="row">';
+    html += '<div class="col"><div class="field-group"><div class="field-label">API Key</div><div class="field-value" style="font-size:11px;word-break:break-all;">' + (c.api_key || '-') + '</div></div></div>';
+    html += '</div>';
+    html += '<div class="row">';
+    html += '<div class="col"><div class="field-group"><div class="field-label">Credits Remaining</div><div class="field-value" id="modal-credits">' + (c.credits_remaining || 0) + '</div></div></div>';
+    html += '<div class="col"><div class="field-group"><div class="field-label">Rate Limit /h</div><div class="field-value">' + (c.rate_limit_per_hour || 0) + '</div></div></div>';
+    html += '<div class="col"><div class="field-group"><div class="field-label">Max Results</div><div class="field-value">' + (c.max_results_cap || 0) + '</div></div></div>';
+    html += '<div class="col"><div class="field-group"><div class="field-label">Active</div><div class="field-value">' + (c.is_active ? 'Yes' : 'No') + '</div></div></div>';
+    html += '</div>';
+    html += '<div class="row">';
+    html += '<div class="col"><div class="field-group"><div class="field-label">Total Requests</div><div class="field-value">' + (c.total_requests || 0) + '</div></div></div>';
+    html += '<div class="col"><div class="field-group"><div class="field-label">Unread Notifications</div><div class="field-value">' + (c.unread_notifications || 0) + '</div></div></div>';
+    html += '<div class="col"><div class="field-group"><div class="field-label">Created</div><div class="field-value">' + (c.created_at ? c.created_at.substring(0, 16) : '-') + '</div></div></div>';
+    html += '</div>';
+    html += '<div class="field-group mt"><div class="field-label">Quick Credits Add</div></div>';
+    html += '<div class="inline-edit mb">';
+    html += '<input type="number" id="modal-add-credits" value="100" style="width:80px;">';
+    html += '<button class="btn btn-sm" onclick="modalAddCredits(\'' + c.id + '\')">Add Credits</button>';
+    html += '<button class="btn btn-sm" onclick="modalSetCredits(\'' + c.id + '\')">Set Credits</button>';
+    html += '</div>';
+
+    if (c.recent_requests && c.recent_requests.length > 0) {
+      html += '<div class="field-group mt"><div class="field-label">Recent Requests</div></div>';
+      html += '<table><tr><th>ID</th><th>Status</th><th>Results</th><th>Time</th><th>Date</th></tr>';
+      c.recent_requests.forEach(function(req) {
+        html += '<tr><td style="font-size:10px;">' + (req.request_id || '').substring(0, 8) + '..</td>';
+        html += '<td>' + (req.status || '-') + '</td>';
+        html += '<td>' + (req.results_count || 0) + '</td>';
+        html += '<td>' + (req.processing_time_ms || '-') + 'ms</td>';
+        html += '<td style="font-size:11px;">' + (req.created_at || '').substring(0, 16) + '</td></tr>';
+      });
+      html += '</table>';
+    }
+
+    html += '<div class="field-group mt"><div class="field-label">Send Notification to User</div></div>';
+    html += '<div class="mb"><input type="text" id="modal-notif-title" placeholder="Title (optional)" value="New message from admin"></div>';
+    html += '<div class="mb"><textarea id="modal-notif-msg" placeholder="Write a message to this user..."></textarea></div>';
+    html += '<button class="btn btn-sm" onclick="modalSendNotif(\'' + c.id + '\')">Send Notification</button>';
+    html += '<div id="modal-notif-result" class="alert hidden mt"></div>';
+
+    $('modal-body').innerHTML = html;
+  });
+}
+
+function closeClientModal(e) {
+  if (e && e.target !== $('client-modal')) return;
+  hide('client-modal');
+}
+
+function modalAddCredits(id) {
+  var amt = parseInt($('modal-add-credits').value);
+  if (isNaN(amt) || amt <= 0) return;
+  var fd = new FormData();
+  fd.set('credits', amt);
+  api('PATCH', '/api/admin/clients/' + id, fd).then(function(r) {
+    if (r.ok) { loadClients(); openClient(id); }
+  });
+}
+
+function modalSetCredits(id) {
+  var amt = parseInt($('modal-add-credits').value);
+  if (isNaN(amt) || amt < 0) return;
+  var fd = new FormData();
+  fd.set('credits', amt);
+  api('PATCH', '/api/admin/clients/' + id, fd).then(function(r) {
+    if (r.ok) { loadClients(); openClient(id); }
+  });
+}
+
+function modalSendNotif(id) {
+  var title = $('modal-notif-title').value.trim() || 'New message from admin';
+  var msg = $('modal-notif-msg').value.trim();
+  if (!msg) { showModalAlert('Enter a message', true); return; }
+  var fd = new FormData();
+  fd.set('title', title);
+  fd.set('message', msg);
+  api('POST', '/api/admin/clients/' + id + '/message', fd).then(function(r) {
+    if (r.ok) {
+      showModalAlert('Notification sent!', false);
+      $('modal-notif-msg').value = '';
+      loadClients();
+    } else {
+      showModalAlert(r.data.detail || 'Failed', true);
+    }
+  });
+}
+
+function showModalAlert(msg, isErr) {
+  var el = $('modal-notif-result');
+  el.textContent = msg;
+  el.className = 'alert mt ' + (isErr ? 'alert-err' : 'alert-ok');
+  show(el);
+  if (!isErr) setTimeout(function() { hide(el); }, 3000);
 }
 
 async function loadMessages(filter) {
   filter = filter || 'pending';
   show('messages-loading');
-  document.querySelectorAll('#messages-table .msg-filter-btn').forEach(function(b) { b.classList.remove('active'); });
   var r = await api('GET', '/api/admin/messages?status=' + filter);
   hide('messages-loading');
-  if (!r.ok) { $('messages-table').innerHTML = '<div class="alert alert-err">Failed to load messages</div>'; return; }
+  if (!r.ok) { $('messages-table').innerHTML = '<div class="alert alert-err">Failed to load</div>'; return; }
   var msgs = r.data.messages || [];
-  if (msgs.length === 0) { $('messages-table').innerHTML = '<div class="alert">No messages found</div>'; return; }
+  if (msgs.length === 0) { $('messages-table').innerHTML = '<div class="alert">No messages</div>'; return; }
   var html = '<table><tr><th>Date</th><th>Client</th><th>Subject</th><th>Message</th><th>Status</th><th>Action</th></tr>';
   msgs.forEach(function(m) {
     html += '<tr>';
@@ -326,11 +454,11 @@ async function loadMessages(filter) {
     html += '<td>' + (m.status || '-') + '</td>';
     html += '<td>';
     if (m.status === 'pending') {
-      html += '<form class="inline-form" onsubmit="return resolveMsg(\'' + m.id + '\', this)">';
-      html += '<input type="number" name="credits" placeholder="add credits" style="width:70px;" value="0"> ';
-      html += '<input type="text" name="notes" placeholder="note" style="width:80px;"> ';
-      html += '<button class="btn btn-sm" type="submit">Resolve</button>';
-      html += '</form>';
+      html += '<div class="inline-edit" id="resolve-form-' + m.id + '">';
+      html += '<input type="number" placeholder="add credits" style="width:70px;" value="0"> ';
+      html += '<input type="text" placeholder="note" style="width:80px;"> ';
+      html += '<button class="btn btn-sm" onclick="resolveMsg(\'' + m.id + '\')">Resolve</button>';
+      html += '</div>';
     } else {
       html += '<span style="font-size:11px;">' + (m.admin_notes || 'done') + '</span>';
     }
@@ -340,13 +468,56 @@ async function loadMessages(filter) {
   $('messages-table').innerHTML = html;
 }
 
-async function resolveMsg(id, form) {
-  var fd = new FormData(form);
-  var r = await api('POST', '/api/admin/messages/' + id + '/resolve', fd);
-  if (r.ok) {
-    loadMessages('pending');
+function resolveMsg(id) {
+  var form = $('resolve-form-' + id);
+  if (!form) return;
+  var inputs = form.querySelectorAll('input');
+  var credits = parseInt(inputs[0].value) || 0;
+  var notes = inputs[1].value || '';
+  var fd = new FormData();
+  fd.set('credits', credits);
+  fd.set('notes', notes);
+  api('POST', '/api/admin/messages/' + id + '/resolve', fd).then(function(r) {
+    if (r.ok) loadMessages('pending');
+  });
+}
+
+async function loadJobsSummary() {
+  show('jobs-loading');
+  var r = await api('GET', '/api/admin/jobs-summary');
+  hide('jobs-loading');
+  if (!r.ok) { $('jobs-summary').innerHTML = '<div class="alert alert-err">Failed to load</div>'; return; }
+  var d = r.data;
+  var html = '<div class="row">';
+  html += '<div class="col"><div class="field-group"><div class="field-label">Total Jobs (all)</div><div class="field-value" style="font-size:24px;font-weight:700;">' + (d.total || 0) + '</div></div></div>';
+  html += '<div class="col"><div class="field-group"><div class="field-label">Active Jobs</div><div class="field-value" style="font-size:24px;font-weight:700;">' + (d.active || 0) + '</div></div></div>';
+  html += '</div>';
+  if (d.by_source && d.by_source.length > 0) {
+    html += '<div class="field-group mt"><div class="field-label">Jobs by Source</div></div>';
+    html += '<table><tr><th>Source</th><th>Count</th></tr>';
+    d.by_source.forEach(function(s) {
+      html += '<tr><td>' + s.source + '</td><td>' + s.count + '</td></tr>';
+    });
+    html += '</table>';
   }
-  return false;
+  $('jobs-summary').innerHTML = html;
+
+  if (d.recent && d.recent.length > 0) {
+    var html2 = '<table><tr><th>Title</th><th>Company</th><th>Source</th><th>Trust</th><th>Added</th></tr>';
+    d.recent.forEach(function(j) {
+      html2 += '<tr>';
+      html2 += '<td>' + (j.title || '').substring(0, 40) + '</td>';
+      html2 += '<td>' + (j.company || '-') + '</td>';
+      html2 += '<td>' + (j.source_platform || '-') + '</td>';
+      html2 += '<td>' + (j.trust_score ? j.trust_score.toFixed(2) : '0') + '</td>';
+      html2 += '<td style="font-size:11px;">' + (j.created_at || '').substring(0, 16) + '</td>';
+      html2 += '</tr>';
+    });
+    html2 += '</table>';
+    $('jobs-list').innerHTML = html2;
+  } else {
+    $('jobs-list').innerHTML = '<div class="alert">No jobs found</div>';
+  }
 }
 
 async function triggerCrawl() {
@@ -369,28 +540,24 @@ async function loadSessions() {
   show('sessions-loading');
   var r = await api('GET', '/api/admin/sessions?limit=15');
   hide('sessions-loading');
-  if (!r.ok) { $('sessions-table').innerHTML = '<div class="alert alert-err">Failed to load sessions</div>'; return; }
+  if (!r.ok) { $('sessions-table').innerHTML = '<div class="alert alert-err">Failed to load</div>'; return; }
   var sessions = r.data.sessions || [];
   if (sessions.length === 0) { $('sessions-table').innerHTML = '<div class="alert">No crawl sessions yet</div>'; return; }
-  var html = '<table><tr><th>Started</th><th>Triggered By</th><th>Jobs</th><th>OK</th><th>Fail</th><th>Status</th></tr>';
+  var html = '<table><tr><th>Started</th><th>By</th><th>Jobs</th><th>OK</th><th>Fail</th><th>Status</th></tr>';
   sessions.forEach(function(s) {
+    var st = s.status || '';
+    var lbl = { running: 'RUNNING', complete: 'DONE', failed: 'FAILED', partial: 'PARTIAL' };
     html += '<tr>';
     html += '<td style="font-size:11px;">' + (s.started_at ? s.started_at.substring(0, 16) : '-') + '</td>';
     html += '<td>' + (s.triggered_by || '-') + '</td>';
     html += '<td>' + (s.total_jobs_found || 0) + '</td>';
     html += '<td>' + (s.sources_succeeded || 0) + '</td>';
     html += '<td>' + (s.sources_failed || 0) + '</td>';
-    html += '<td>' + statusBadge(s.status) + '</td>';
+    html += '<td>' + (lbl[st] || st) + '</td>';
     html += '</tr>';
   });
   html += '</table>';
   $('sessions-table').innerHTML = html;
-}
-
-function statusBadge(s) {
-  if (!s) return '-';
-  var m = { running: 'RUNNING', complete: 'DONE', failed: 'FAILED', partial: 'PARTIAL' };
-  return m[s] || s;
 }
 
 function showAlert(id, msg, isErr) {
@@ -403,10 +570,7 @@ function showAlert(id, msg, isErr) {
 
 (function init() {
   var s = getSession();
-  if (s.api_key) {
-    ADMIN_KEY = s.api_key;
-    authAdmin();
-  }
+  if (s.api_key) { ADMIN_KEY = s.api_key; authAdmin(); }
 })();
 </script>
 
