@@ -1,3 +1,4 @@
+import json
 import asyncpg
 from contextlib import asynccontextmanager
 from core.config import settings
@@ -29,9 +30,13 @@ def get_pool() -> asyncpg.Pool:
     return _pool
 
 
+def _serialize_args(args):
+    return tuple(json.dumps(a) if isinstance(a, (list, dict)) else a for a in args)
+
+
 async def execute(query: str, *args):
     async with get_pool().acquire() as conn:
-        return await conn.execute(query, *args)
+        return await conn.execute(query, *_serialize_args(args))
 
 
 async def fetch(query: str, *args):

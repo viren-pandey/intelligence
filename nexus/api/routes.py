@@ -149,6 +149,15 @@ async def _run_sync_analyze(request, client_id, max_results, start_time):
     )
     crawl_session_id = str(session_row["session_id"])
 
+    await execute(
+        """INSERT INTO analyze_requests (request_id, api_client_id, status, created_at, user_id_from_client)
+           VALUES ($1, $2, 'processing', NOW(), $3)
+           ON CONFLICT (request_id) DO NOTHING""",
+        request.request_id,
+        client_id,
+        request.student.user_id,
+    )
+
     analyzer = ATSAnalyzer()
     ats_signals = analyzer.analyze(request.student)
     queries = ats_signals.search_queries
@@ -165,13 +174,13 @@ async def _run_sync_analyze(request, client_id, max_results, start_time):
     use_db_only = (
         pre_count is not None and pre_count >= settings.MIN_JOBS_FOR_CACHED_RESPONSE
     )
+    log.info("inventory_check", pre_count=pre_count, use_db_only=use_db_only)
 
     all_jobs = []
 
     if use_db_only:
         db_jobs = await fetch(
-            "SELECT * FROM jobs WHERE is_expired = FALSE AND freshness_score > $1 ORDER BY trust_score DESC LIMIT $2",
-            settings.FRESHNESS_CUTOFF,
+            "SELECT * FROM jobs WHERE is_expired = FALSE ORDER BY trust_score DESC LIMIT $1",
             settings.MIN_JOBS_FOR_CACHED_RESPONSE * 2,
         )
         for j in db_jobs:
@@ -203,18 +212,19 @@ async def _run_sync_analyze(request, client_id, max_results, start_time):
                 all_jobs.append(ej)
             except Exception:
                 continue
-
-    crawl_results = await dispatcher.dispatch(crawl_session_id, queries)
-
-    total_raw = sum(r.jobs_found for r in crawl_results)
-    sources_ok = sum(1 for r in crawl_results if r.status == "complete")
-    sources_fail = sum(1 for r in crawl_results if r.status == "failed")
-
-    for result in crawl_results:
-        for raw in result.jobs:
-            enriched = EnrichedJob(**raw.model_dump())
-            enriched.crawl_session_id = crawl_session_id
-            all_jobs.append(enriched)
+        total_raw = 0
+        sources_ok = 0
+        sources_fail = 0
+    else:
+        crawl_results = await dispatcher.dispatch(crawl_session_id, queries)
+        total_raw = sum(r.jobs_found for r in crawl_results)
+        sources_ok = sum(1 for r in crawl_results if r.status == "complete")
+        sources_fail = sum(1 for r in crawl_results if r.status == "failed")
+        for result in crawl_results:
+            for raw in result.jobs:
+                enriched = EnrichedJob(**raw.model_dump())
+                enriched.crawl_session_id = crawl_session_id
+                all_jobs.append(enriched)
 
     deduped = simhash_duplicates(all_jobs)
     duplicates_removed = len(all_jobs) - len(deduped) if all_jobs else 0
