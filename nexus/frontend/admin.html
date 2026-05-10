@@ -187,11 +187,11 @@ tr.clickable { cursor: pointer; }
 
 </div>
 
-<div id="client-modal" class="modal-overlay hidden" onclick="closeClientModal(event)">
+<div id="client-modal" class="modal-overlay hidden" onclick="if(event.target==this)hide('client-modal')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
       <span id="modal-title">Client Detail</span>
-      <button class="close" onclick="closeClientModal()">&times;</button>
+      <button class="close" onclick="hide('client-modal')">&times;</button>
     </div>
     <div class="modal-body" id="modal-body"></div>
   </div>
@@ -342,7 +342,7 @@ function openClient(id) {
     html += '<div class="col"><div class="field-group"><div class="field-label">Contact Email</div><div class="field-value">' + (c.contact_email || '-') + '</div></div></div>';
     html += '</div>';
     html += '<div class="row">';
-    html += '<div class="col"><div class="field-group"><div class="field-label">API Key</div><div class="field-value" style="font-size:11px;word-break:break-all;">' + (c.api_key || '-') + '</div></div></div>';
+    html += '<div class="col"><div class="field-group"><div class="field-label">API Key</div><div class="field-value" style="font-size:11px;word-break:break-all;">' + (c.api_key || '-') + ' <button class="copy-btn" onclick="copyText(\'' + (c.api_key || '') + '\')">Copy</button></div></div></div>';
     html += '</div>';
     html += '<div class="row">';
     html += '<div class="col"><div class="field-group"><div class="field-label">Credits Remaining</div><div class="field-value" id="modal-credits">' + (c.credits_remaining || 0) + '</div></div></div>';
@@ -385,10 +385,7 @@ function openClient(id) {
   });
 }
 
-function closeClientModal(e) {
-  if (e && e.target !== $('client-modal')) return;
-  hide('client-modal');
-}
+function copyText(t) { navigator.clipboard.writeText(t).catch(function(){}); }
 
 function modalAddCredits(id) {
   var amt = parseInt($('modal-add-credits').value);
