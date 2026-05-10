@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Admin</title>
+<link rel="stylesheet" href="/static/frontend/css/style.css">
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1><span>NEXUS</span> ADMIN</h1>
+    <div class="subtitle">System Administration</div>
+  </div>
+  <div class="right">
+    <a href="/" class="btn btn-sm">Dashboard</a>
+    <a href="/playground" class="btn btn-sm">API Playground</a>
+    <a href="/admin" class="btn btn-sm" target="_blank">Full Panel</a>
+  </div>
+</div>
+<div class="nav">
+  <a href="#" class="active" data-page="overview" onclick="showTab('overview')">Overview</a>
+  <a href="#" data-page="sources" onclick="showTab('sources')">Sources</a>
+  <a href="#" data-page="clients" onclick="showTab('clients')">Clients</a>
+  <a href="#" data-page="crawls" onclick="showTab('crawls')">Crawls</a>
+</div>
+<div class="content">
+
+<div class="tab-content active" id="tab-overview">
+  <div class="stat-grid">
+    <div class="stat-card"><div class="num" id="ovJobs">-</div><div class="label">Total Jobs</div></div>
+    <div class="stat-card"><div class="num" id="ov24h">-</div><div class="label">Added 24h</div></div>
+    <div class="stat-card"><div class="num" id="ovTrust">-</div><div class="label">Avg Trust</div></div>
+    <div class="stat-card"><div class="num" id="ovSources">-</div><div class="label">Sources</div></div>
+  </div>
+  <div class="card">
+    <h2>Recent Crawls</h2>
+    <table><thead><tr><th>Session</th><th>Status</th><th>Jobs Found</th><th>Time</th></tr></thead>
+    <tbody id="crawlList"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody></table>
+  </div>
+  <div class="card">
+    <h2>Jobs by Source</h2>
+    <table><thead><tr><th>Source</th><th>Count</th></tr></thead>
+    <tbody id="sourceList"><tr><td colspan="2" class="loading">Loading...</td></tr></tbody></table>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-sources">
+  <div class="card">
+    <h2>Crawler Sources</h2>
+    <p style="font-size:13px;color:#888;margin-bottom:12px">Status of all configured crawler sources.</p>
+    <table><thead><tr><th>Source</th><th>Type</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>RemoteOK</td><td>JSON API</td><td><span class="badge badge-ok">Active</span></td></tr>
+      <tr><td>YC Jobs</td><td>Scrapy</td><td><span class="badge badge-ok">Active</span></td></tr>
+      <tr><td>We Work Remotely</td><td>Scrapy</td><td><span class="badge badge-ok">Active</span></td></tr>
+      <tr><td>LinkedIn Public</td><td>Playwright</td><td><span class="badge badge-pending">Needs Browser</span></td></tr>
+      <tr><td>GitHub Hiring</td><td>Scrapy + API</td><td><span class="badge badge-ok">Active</span></td></tr>
+      <tr><td>Google SERP</td><td>Playwright</td><td><span class="badge badge-pending">Needs Browser</span></td></tr>
+      <tr><td>Niche Boards</td><td>Scrapy</td><td><span class="badge badge-ok">Active</span></td></tr>
+      <tr><td>Career Pages</td><td>Scrapy + PW</td><td><span class="badge badge-ok">Active</span></td></tr>
+      <tr><td>Internshala</td><td>Scrapy</td><td><span class="badge badge-ok">Active</span></td></tr>
+      <tr><td>Founder Posts</td><td>Scrapy</td><td><span class="badge badge-ok">Active</span></td></tr>
+      <tr><td>ProductHunt</td><td>Scrapy</td><td><span class="badge badge-ok">Active</span></td></tr>
+      <tr><td>Nitter Twitter</td><td>Scrapy</td><td><span class="badge badge-ok">Active</span></td></tr>
+      <tr><td>Discord Jobs</td><td>Playwright</td><td><span class="badge badge-pending">Needs Browser</span></td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-clients">
+  <div class="card">
+    <h2>API Clients</h2>
+    <table><thead><tr><th>Client</th><th>API Key</th><th>Credits</th><th>Rate Limit</th><th>Status</th></tr></thead>
+    <tbody id="clientList"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody></table>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-crawls">
+  <div class="card">
+    <h2>Crawl Sessions</h2>
+    <p style="font-size:13px;color:#888;margin-bottom:12px">History of crawl runs across all sources.</p>
+    <table><thead><tr><th>Session ID</th><th>Trigger</th><th>Status</th><th>Jobs</th><th>Started</th></tr></thead>
+    <tbody id="allCrawls"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody></table>
+  </div>
+</div>
+
+</div>
+<script src="/static/frontend/js/api.js"></script>
+<script>
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('active', a.dataset.page === name));
+}
+
+async function loadData() {
+  const r = await checkCredits();
+  if (r.ok) {
+    document.getElementById('ovJobs').textContent = r.data.total_active_jobs || 0;
+    document.getElementById('ov24h').textContent = r.data.jobs_added_24h || 0;
+    document.getElementById('ovTrust').textContent = r.data.average_trust_score || 0;
+    if (r.data.jobs_by_source) {
+      document.getElementById('ovSources').textContent = r.data.jobs_by_source.length;
+      document.getElementById('sourceList').innerHTML = r.data.jobs_by_source.map(s =>
+        `<tr><td>${s.source}</td><td>${s.count}</td></tr>`
+      ).join('');
+    }
+  }
+}
+
+loadData();
+
+// Simple async fetch for admin views
+async function fetchAdmin(path) {
+  const s = getStored();
+  const h = {};
+  if (s.api_key) h['X-API-Key'] = s.api_key;
+  const r = await fetch('/api' + path, { headers: h });
+  try { return await r.json(); } catch { return null; }
+}
+</script>
+</body>
+</html>
