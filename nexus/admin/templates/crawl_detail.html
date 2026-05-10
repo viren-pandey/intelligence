@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Crawl Detail{% endblock %}
+{% block content %}
+<h1>Crawl Session: {{ session["session_id"] }}</h1>
+
+<div class="card">
+  <table style="width:auto">
+    <tr><td><strong>Triggered by</strong></td><td>{{ session["triggered_by"] }}</td></tr>
+    <tr><td><strong>Started</strong></td><td>{{ session["started_at"].strftime("%Y-%m-%d %H:%M:%S") if session["started_at"] else "" }}</td></tr>
+    <tr><td><strong>Completed</strong></td><td>{{ session["completed_at"].strftime("%Y-%m-%d %H:%M:%S") if session["completed_at"] else "" }}</td></tr>
+    <tr><td><strong>Status</strong></td><td><span class="badge {% if session['status'] == 'complete' %}badge-ok{% elif session['status'] == 'failed' %}badge-fail{% else %}badge-partial{% endif %}">{{ session["status"] }}</span></td></tr>
+    <tr><td><strong>Total Jobs Found</strong></td><td>{{ session["total_jobs_found"] }}</td></tr>
+    <tr><td><strong>Total Jobs Saved</strong></td><td>{{ session["total_jobs_saved"] }}</td></tr>
+    <tr><td><strong>Duplicates Removed</strong></td><td>{{ session["duplicates_removed"] }}</td></tr>
+    <tr><td><strong>Sources Succeeded</strong></td><td>{{ session["sources_succeeded"] }}</td></tr>
+    <tr><td><strong>Sources Failed</strong></td><td>{{ session["sources_failed"] }}</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Source Breakdown</h2>
+  <table>
+    <tr><th>Source</th><th>Pages</th><th>Jobs Found</th><th>Rejected</th><th>Errors</th><th>Duration</th><th>Status</th></tr>
+    {% for s in sources %}
+    <tr>
+      <td><strong>{{ s.source_name }}</strong></td>
+      <td>{{ s.pages_crawled }}</td>
+      <td>{{ s.jobs_found }}</td>
+      <td>{{ s.jobs_rejected }}</td>
+      <td>{{ s.error_count }}</td>
+      <td>{{ s.duration }}</td>
+      <td>
+        {% if s.status == "complete" %}
+          <span class="badge badge-ok">OK</span>
+        {% elif s.status == "failed" %}
+          <span class="badge badge-fail">FAILED</span>
+        {% else %}
+          <span class="badge badge-pending">{{ s.status }}</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<a href="/admin/crawl/live/{{ session['session_id'] }}" class="btn">Live Monitor</a>
+<a href="/admin/crawls" class="btn">Back</a>
+{% endblock %}

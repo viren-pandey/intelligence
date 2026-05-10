@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Job Detail{% endblock %}
+{% block content %}
+<h1>Job Detail</h1>
+<div class="card">
+  <table style="width:auto">
+    {% for key, value in job.items() %}
+    <tr>
+      <td style="font-weight:600;padding-right:24px;vertical-align:top">{{ key }}</td>
+      <td style="word-break:break-all">{{ value }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+<div class="flex">
+  <form action="/admin/jobs/{{ job['job_id'] }}/expire" method="post" class="inline-form">
+    <button type="submit" class="btn btn-danger" onclick="return confirm('Mark this job as expired?')">Mark Expired</button>
+  </form>
+  <a href="/admin/jobs" class="btn">Back to Jobs</a>
+</div>
+{% endblock %}

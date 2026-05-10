@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Contact Requests{% endblock %}
+{% block content %}
+<h1>Request Manager</h1>
+
+<div class="filters">
+  <a href="/admin/contact?status=all">All</a>
+  <a href="/admin/contact?status=pending">Pending</a>
+  <a href="/admin/contact?status=resolved">Resolved</a>
+</div>
+
+<div class="card">
+  <table>
+    <tr>
+      <th>Client</th><th>Email</th><th>Subject</th><th>Message</th>
+      <th>Type</th><th>Requested Limit</th><th>Status</th><th>Date</th><th>Action</th>
+    </tr>
+    {% for r in requests %}
+    <tr {% if r.status == 'pending' %}style="background:#fffbe6"{% endif %}>
+      <td>{{ r.client_name }}</td>
+      <td>{{ r.contact_email }}</td>
+      <td>{{ r.subject }}</td>
+      <td style="font-size:12px;max-width:200px">{{ r.message }}</td>
+      <td><span class="badge badge-pending">{{ r.request_type }}</span></td>
+      <td>{{ r.new_limit_requested or '-' }}</td>
+      <td>
+        {% if r.status == 'pending' %}
+          <span class="badge badge-pending">PENDING</span>
+        {% else %}
+          <span class="badge badge-ok">RESOLVED</span>
+        {% endif %}
+      </td>
+      <td style="font-size:11px">{{ r.created_at }}</td>
+      <td>
+        {% if r.status == 'pending' %}
+        <form action="/admin/contact/{{ r.id }}/resolve" method="post" class="inline-form">
+          <input type="number" name="credits" placeholder="Add credits" style="width:80px" min="0">
+          <input type="text" name="admin_notes" placeholder="Notes" style="width:100px">
+          <button type="submit" class="btn btn-success" style="font-size:11px;padding:3px 8px">Resolve</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <div class="pagination">
+    {% if page > 1 %}<a href="/admin/contact?status={{ status }}&page={{ page - 1 }}">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}<a href="/admin/contact?status={{ status }}&page={{ page + 1 }}">Next</a>{% endif %}
+  </div>
+</div>
+{% endblock %}

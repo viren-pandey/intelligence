@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Deletion Log{% endblock %}
+{% block content %}
+<h1>Deletion Log</h1>
+<div class="filters">
+  <a href="/admin/deletions?reason=all">All</a>
+  <a href="/admin/deletions?reason=deadline_passed">Deadline Passed</a>
+  <a href="/admin/deletions?reason=manual">Manual</a>
+  <a href="/admin/deletions?reason=trust_fail">Trust Fail</a>
+  <a href="/admin/deletions?reason=duplicate">Duplicate</a>
+</div>
+<div class="card">
+  <table>
+    <tr><th>Job ID</th><th>Title</th><th>Company</th><th>Deleted At</th><th>Reason</th><th>Deadline Was</th></tr>
+    {% for d in deletions %}
+    <tr>
+      <td style="font-size:11px">{{ d.job_id }}</td>
+      <td>{{ d.title[:50] }}</td>
+      <td>{{ d.company }}</td>
+      <td style="font-size:12px">{{ d.deleted_at }}</td>
+      <td><span class="badge {% if d.deleted_reason == 'deadline_passed' %}badge-partial{% elif d.deleted_reason == 'manual' %}badge-pending{% else %}badge-fail{% endif %}">{{ d.deleted_reason }}</span></td>
+      <td>{{ d.original_deadline }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <div class="pagination">
+    {% if page > 1 %}<a href="/admin/deletions?reason={{ reason }}&page={{ page - 1 }}">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}<a href="/admin/deletions?reason={{ reason }}&page={{ page + 1 }}">Next</a>{% endif %}
+  </div>
+</div>
+{% endblock %}

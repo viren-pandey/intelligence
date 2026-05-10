@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Job Search{% endblock %}
+{% block content %}
+<h1>Fulltext Job Search</h1>
+<div class="card">
+  <form action="/admin/jobs/search" method="get" class="flex">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search keywords..." style="width:400px" required>
+    <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+</div>
+
+{% if q %}
+<div class="card">
+  <h2>Results for "{{ q }}" ({{ total }} found)</h2>
+  {% if results %}
+  <table>
+    <tr><th>Title</th><th>Company</th><th>Location</th><th>Trust</th><th>Deadline</th></tr>
+    {% for j in results %}
+    <tr>
+      <td><a href="/admin/jobs/{{ j.job_id }}">{{ j.title[:60] }}</a></td>
+      <td>{{ j.company }}</td>
+      <td>{{ j.location[:30] }}</td>
+      <td>{{ j.trust_score }}</td>
+      <td>{{ j.deadline }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <div class="pagination">
+    {% if page > 1 %}<a href="/admin/jobs/search?q={{ q }}&page={{ page - 1 }}">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}<a href="/admin/jobs/search?q={{ q }}&page={{ page + 1 }}">Next</a>{% endif %}
+  </div>
+  {% else %}
+  <p>No results found.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

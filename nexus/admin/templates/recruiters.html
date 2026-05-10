@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Recruiters{% endblock %}
+{% block content %}
+<h1>Recruiter Intelligence</h1>
+<div class="card">
+  <table>
+    <tr><th>Company Domain</th><th>Name</th><th>Email</th><th>LinkedIn</th><th>Verified</th></tr>
+    {% for r in recruiters %}
+    <tr>
+      <td><strong>{{ r.company_domain }}</strong></td>
+      <td>{{ r.recruiter_name }}</td>
+      <td>{{ r.recruiter_email }}</td>
+      <td>{% if r.recruiter_linkedin != "-" %}<a href="{{ r.recruiter_linkedin }}" target="_blank">Profile</a>{% else %}-{% endif %}</td>
+      <td>{% if r.email_verified == "YES" %}<span class="badge badge-ok">YES</span>{% else %}<span class="badge badge-disabled">NO</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <div class="pagination">
+    {% if page > 1 %}<a href="/admin/recruiters?page={{ page - 1 }}">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}<a href="/admin/recruiters?page={{ page + 1 }}">Next</a>{% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Live Crawl{% endblock %}
+{% block content %}
+{% if not is_done %}
+<meta http-equiv="refresh" content="3">
+{% endif %}
+<h1>Live Crawl Monitor</h1>
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">{{ running }}</div><div class="label">Running</div></div>
+  <div class="stat-card"><div class="num">{{ done }}</div><div class="label">Complete</div></div>
+  <div class="stat-card"><div class="num">{{ failed }}</div><div class="label">Failed</div></div>
+  <div class="stat-card"><div class="num">{{ total_found }}</div><div class="label">Jobs Found</div></div>
+</div>
+<div class="card">
+  <table>
+    <tr><th>Source</th><th>Status</th><th>Jobs Found</th><th>Errors</th><th>Duration</th></tr>
+    {% for s in sources %}
+    <tr>
+      <td>{{ s.source_name }}</td>
+      <td>
+        {% if s.status == "complete" %}
+          <span class="badge badge-ok">DONE</span>
+        {% elif s.status == "failed" %}
+          <span class="badge badge-fail">FAILED</span>
+        {% elif s.status == "running" %}
+          <span class="badge badge-pending">RUNNING</span>
+        {% else %}
+          {{ s.status }}
+        {% endif %}
+      </td>
+      <td>{{ s.jobs_found }}</td>
+      <td>{{ s.error_count }}</td>
+      <td>{{ s.duration }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% if not is_done %}
+  <p class="mt-2"><em>Auto-refreshing every 3s...</em></p>
+  {% else %}
+  <p class="mt-2"><strong>Crawl complete.</strong></p>
+  {% endif %}
+</div>
+{% endblock %}

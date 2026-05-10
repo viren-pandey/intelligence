@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Crawl History{% endblock %}
+{% block content %}
+<h1>Crawl History</h1>
+<div class="card">
+  <table>
+    <tr><th>Session ID</th><th>Started</th><th>Duration</th><th>Sources</th><th>Jobs Found</th><th>Status</th><th>Live</th></tr>
+    {% for s in sessions %}
+    <tr>
+      <td><a href="/admin/crawls/{{ s.session_id_full }}">{{ s.session_id }}</a></td>
+      <td style="font-size:12px">{{ s.started_at }}</td>
+      <td>{{ s.duration }}</td>
+      <td>{{ s.sources_succeeded }}/{{ s.sources_total }}</td>
+      <td>{{ s.total_jobs_found }}</td>
+      <td>
+        {% if s.status == "complete" %}
+          <span class="badge badge-ok">COMPLETE</span>
+        {% elif s.status == "failed" %}
+          <span class="badge badge-fail">FAILED</span>
+        {% elif s.status == "partial" %}
+          <span class="badge badge-partial">PARTIAL</span>
+        {% else %}
+          <span class="badge badge-pending">{{ s.status }}</span>
+        {% endif %}
+      </td>
+      <td><a href="/admin/crawl/live/{{ s.session_id_raw }}" class="btn" style="font-size:11px;padding:2px 8px">Live</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <div class="pagination">
+    {% if page > 1 %}<a href="/admin/crawls?page={{ page - 1 }}">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}<a href="/admin/crawls?page={{ page + 1 }}">Next</a>{% endif %}
+  </div>
+</div>
+{% endblock %}

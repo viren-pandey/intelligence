@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>NEXUS ADMIN — {% block title %}{% endblock %}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Consolas', monospace; margin: 0; background: #f8f9fa; color: #1a1a2e; }
+    .header { background: #1a1a2e; color: #e0e0e0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #e94560; }
+    .header h1 { font-size: 18px; font-weight: 600; letter-spacing: 1px; }
+    .header h1 span { color: #e94560; }
+    .header .subtitle { font-size: 11px; color: #888; }
+    .nav { background: #16213e; padding: 8px 24px; display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid #0f3460; }
+    .nav a { color: #a8b2d1; text-decoration: none; padding: 6px 14px; border-radius: 4px; font-size: 13px; transition: all 0.2s; border: 1px solid transparent; }
+    .nav a:hover { background: #0f3460; color: #e0e0e0; border-color: #e94560; }
+    .nav a.active { background: #e94560; color: #fff; }
+    .content { padding: 24px; max-width: 1400px; margin: 0 auto; }
+    .card { background: #fff; border-radius: 8px; border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #1a1a2e; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f0f2f5; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #555; }
+    tr:hover { background: #f8f9ff; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 16px; color: #1a1a2e; }
+    h2 { font-size: 18px; font-weight: 600; margin: 16px 0 10px; color: #333; }
+    hr { border: none; border-top: 1px solid #e0e0e0; margin: 16px 0; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .badge-ok { background: #d4edda; color: #155724; }
+    .badge-fail { background: #f8d7da; color: #721c24; }
+    .badge-partial { background: #fff3cd; color: #856404; }
+    .badge-pending { background: #cce5ff; color: #004085; }
+    .badge-disabled { background: #e2e3e5; color: #383d41; }
+    .btn { display: inline-block; padding: 6px 16px; border-radius: 4px; font-family: inherit; font-size: 13px; cursor: pointer; border: 1px solid #ccc; background: #fff; transition: all 0.2s; }
+    .btn:hover { background: #f0f0f0; }
+    .btn-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-danger { background: #dc3545; color: #fff; border-color: #dc3545; }
+    .btn-danger:hover { background: #c82333; }
+    .btn-success { background: #28a745; color: #fff; border-color: #28a745; }
+    .btn-success:hover { background: #218838; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .stat-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .stat-card .num { font-size: 28px; font-weight: 700; color: #1a1a2e; }
+    .stat-card .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+    input, select, textarea { font-family: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
+    .pagination { margin-top: 16px; display: flex; align-items: center; gap: 12px; font-size: 13px; }
+    .filters { margin: 12px 0; display: flex; gap: 6px; flex-wrap: wrap; }
+    .filters a { padding: 4px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+    .filters a:hover { background: #f0f0f0; text-decoration: none; }
+    .inline-form { display: inline; }
+    .text-right { text-align: right; }
+    .mt-2 { margin-top: 8px; }
+    .mb-2 { margin-bottom: 8px; }
+    .flex { display: flex; gap: 12px; align-items: center; }
+    .warn { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 10px 14px; font-size: 13px; margin: 10px 0; }
+    .red { color: #dc3545; }
+    .green { color: #28a745; }
+    .orange { color: #fd7e14; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1><span>NEXUS</span> ADMIN</h1>
+      <div class="subtitle">Intelligent Recruitment Middleware</div>
+    </div>
+  </div>
+  <div class="nav">
+    <a href="/admin">Dashboard</a>
+    <a href="/admin/crawls">Crawls</a>
+    <a href="/admin/crawl/live">Live</a>
+    <a href="/admin/sources">Sources</a>
+    <a href="/admin/jobs">Jobs</a>
+    <a href="/admin/jobs/search">Search</a>
+    <a href="/admin/deletions">Deletions</a>
+    <a href="/admin/recruiters">Recruiters</a>
+    <a href="/admin/clients">Clients</a>
+    <a href="/admin/webhooks">Webhooks</a>
+    <a href="/admin/contact">Requests</a>
+    <a href="/contact">Support</a>
+  </div>
+  <div class="content">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

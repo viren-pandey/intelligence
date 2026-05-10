@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">{{ stats.total_jobs }}</div><div class="label">Total Jobs</div></div>
+  <div class="stat-card"><div class="num">{{ stats.active_jobs }}</div><div class="label">Active Jobs</div></div>
+  <div class="stat-card"><div class="num">{{ stats.expired_24h }}</div><div class="label">Expired (24h)</div></div>
+  <div class="stat-card"><div class="num">{{ stats.crawls_today }}</div><div class="label">Crawls Today</div></div>
+  <div class="stat-card"><div class="num">{{ stats.active_sources }}</div><div class="label">Active Sources</div></div>
+  <div class="stat-card"><div class="num">{{ stats.disabled_sources }}</div><div class="label">Disabled Sources</div></div>
+  <div class="stat-card"><div class="num">{{ stats.total_clients }}</div><div class="label">API Clients</div></div>
+  <div class="stat-card"><div class="num">{{ stats.pending_requests }}</div><div class="label">Pending Requests</div></div>
+</div>
+
+<div class="card">
+  <h2>System Status</h2>
+  <table style="width:auto">
+    <tr><td>Last Crawl</td><td>{{ stats.last_crawl_at }}</td></tr>
+    <tr><td>Last Crawl Status</td><td><span class="badge {% if stats.last_crawl_status == 'complete' %}badge-ok{% elif stats.last_crawl_status == 'failed' %}badge-fail{% else %}badge-partial{% endif %}">{{ stats.last_crawl_status }}</span></td></tr>
+    <tr><td>Total Deleted Jobs</td><td>{{ stats.total_deleted }}</td></tr>
+    <tr><td>Recruiter Records</td><td>{{ stats.recruiter_count }}</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Quick Actions</h2>
+  <div class="flex">
+    <form action="/admin/crawl/trigger" method="post" class="inline-form">
+      <button type="submit" class="btn btn-primary" onclick="return confirm('Trigger manual crawl?')">Trigger Crawl</button>
+    </form>
+    <a href="/admin/clients" class="btn">Manage Clients</a>
+    <a href="/admin/contact" class="btn">View Requests</a>
+    <a href="/admin/sources" class="btn">Source Health</a>
+  </div>
+</div>
+
+{% if pending_requests %}
+<div class="card">
+  <h2>Pending Requests ({{ pending_requests|length }})</h2>
+  <table>
+    <tr><th>Client</th><th>Subject</th><th>Date</th><th></th></tr>
+    {% for r in pending_requests %}
+    <tr>
+      <td>{{ r.client_name or 'Unknown' }}</td>
+      <td>{{ r.subject }}</td>
+      <td>{{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else '' }}</td>
+      <td><a href="/admin/contact">View</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endblock %}

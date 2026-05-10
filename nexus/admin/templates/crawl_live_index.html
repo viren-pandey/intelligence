@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Live Crawl Monitor{% endblock %}
+{% block content %}
+<h1>Live Crawl Monitor</h1>
+
+{% if running %}
+<div class="card">
+  <h2>Currently Running</h2>
+  <table>
+    <tr><th>Session ID</th><th>Started</th><th>Jobs Found</th><th>Sources</th><th>Monitor</th></tr>
+    {% for s in running %}
+    <tr>
+      <td style="font-size:11px">{{ s["session_id"] }}</td>
+      <td>{{ s["started_at"].strftime("%H:%M:%S") if s["started_at"] else "" }}</td>
+      <td>{{ s["total_jobs_found"] or 0 }}</td>
+      <td>{{ s["total_sources"] or 0 }}</td>
+      <td><a href="/admin/crawl/live/{{ s['session_id'] }}" class="btn btn-primary" style="font-size:11px;padding:3px 10px">Monitor</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Recent Crawls</h2>
+  <table>
+    <tr><th>Session ID</th><th>Started</th><th>Jobs Found</th><th>Status</th><th></th></tr>
+    {% for s in recent %}
+    <tr>
+      <td style="font-size:11px">{{ s["session_id"] }}</td>
+      <td style="font-size:12px">{{ s["started_at"].strftime("%Y-%m-%d %H:%M:%S") if s["started_at"] else "" }}</td>
+      <td>{{ s["total_jobs_found"] or 0 }}</td>
+      <td><span class="badge {% if s['status'] == 'complete' %}badge-ok{% elif s['status'] == 'failed' %}badge-fail{% elif s['status'] == 'running' %}badge-pending{% else %}badge-partial{% endif %}">{{ s["status"] }}</span></td>
+      <td><a href="/admin/crawl/live/{{ s['session_id'] }}" class="btn" style="font-size:11px;padding:2px 8px">View</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Monitor Session</h2>
+  <form action="/admin/crawl/live/" method="get" class="flex">
+    <input type="text" name="session_id" placeholder="Paste full session ID..." style="width:400px">
+    <button type="submit" class="btn btn-primary">Monitor</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Source Health{% endblock %}
+{% block content %}
+<h1>Crawler Source Health</h1>
+<div class="card">
+  <table>
+    <tr>
+      <th>Source</th>
+      <th>Status</th>
+      <th>Last Success</th>
+      <th>24h Failures</th>
+      <th>24h Successes</th>
+      <th>Avg Jobs/Crawl</th>
+      <th>Avg Latency</th>
+      <th>Notes</th>
+      <th>Action</th>
+    </tr>
+    {% for s in sources %}
+    <tr {% if s.is_failing %}style="background:#fff3cd"{% endif %}>
+      <td><strong>{{ s.source_name }}</strong></td>
+      <td>
+        {% if not s.enabled %}
+          <span class="badge badge-disabled">DISABLED</span>
+        {% elif s.is_failing %}
+          <span class="badge badge-fail">FAILING</span>
+        {% else %}
+          <span class="badge badge-ok">HEALTHY</span>
+        {% endif %}
+      </td>
+      <td>{{ s.last_success_at }}</td>
+      <td class="{% if s.failure_count_24h > 3 %}red{% endif %}">{{ s.failure_count_24h }}</td>
+      <td>{{ s.success_count_24h }}</td>
+      <td>{{ s.avg_jobs_per_crawl }}</td>
+      <td>{{ s.avg_latency_ms }}ms</td>
+      <td>{{ s.notes }}</td>
+      <td>
+        <form action="/admin/sources/{{ s.source_name }}/toggle" method="post" class="inline-form">
+          <button type="submit" class="btn {% if s.enabled %}btn-danger{% else %}btn-success{% endif %}" style="font-size:11px;padding:3px 10px">
+            {% if s.enabled %}Disable{% else %}Enable{% endif %}
+          </button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

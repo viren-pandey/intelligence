@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Clients{% endblock %}
+{% block content %}
+<h1>API Client Manager</h1>
+
+<div class="card">
+  <h2>Create New Client</h2>
+  <form action="/admin/clients/create" method="post" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:600px">
+    <input type="text" name="client_name" placeholder="Client Name" required>
+    <input type="number" name="rate_limit" placeholder="Rate Limit (req/hr)" value="50">
+    <input type="number" name="max_results" placeholder="Max Results per Request" value="50">
+    <input type="number" name="credits" placeholder="Initial Credits" value="50">
+    <input type="text" name="webhook_url" placeholder="Webhook URL (optional)">
+    <input type="email" name="contact_email" placeholder="Contact Email (optional)">
+    <button type="submit" class="btn btn-primary" style="grid-column:span 2">Create Client</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Existing Clients</h2>
+  <table>
+    <tr>
+      <th>Name</th><th>API Key</th><th>Active</th><th>Rate/hr</th><th>Max Results</th>
+      <th>Credits</th><th>Webhook</th><th>Email</th><th>Last Used</th><th>Actions</th>
+    </tr>
+    {% for c in clients %}
+    <tr>
+      <form action="/admin/clients/{{ c.id }}/update" method="post" class="inline-form">
+      <td><strong>{{ c.client_name }}</strong></td>
+      <td style="font-size:11px"><code>{{ c.api_key }}</code></td>
+      <td>
+        <input type="checkbox" name="is_active" {% if c.is_active %}checked{% endif %}>
+      </td>
+      <td><input type="number" name="rate_limit" value="{{ c.rate_limit_per_hour }}" style="width:70px"></td>
+      <td><input type="number" name="max_results" value="{{ c.max_results_cap }}" style="width:70px"></td>
+      <td><input type="number" name="credits" value="{{ c.credits_remaining }}" style="width:80px"></td>
+      <td style="font-size:11px;max-width:150px;overflow:hidden">{{ c.webhook_url }}</td>
+      <td style="font-size:11px">{{ c.contact_email }}</td>
+      <td style="font-size:11px">{{ c.last_used_at }}</td>
+      <td>
+        <button type="submit" class="btn btn-primary" style="font-size:11px;padding:3px 8px">Update</button>
+      </form>
+      <form action="/admin/clients/{{ c.id }}/delete" method="post" class="inline-form" onsubmit="return confirm('Delete this client?')">
+        <button type="submit" class="btn btn-danger" style="font-size:11px;padding:3px 8px">Delete</button>
+      </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

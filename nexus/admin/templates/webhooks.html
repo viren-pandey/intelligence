@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Webhooks{% endblock %}
+{% block content %}
+<h1>Webhook Delivery Log</h1>
+<div class="card">
+  <table>
+    <tr>
+      <th>ID</th><th>Request</th><th>Client</th><th>URL</th><th>Event</th>
+      <th>HTTP Status</th><th>Retries</th><th>Delivered</th><th>Retry</th>
+    </tr>
+    {% for d in deliveries %}
+    <tr>
+      <td>{{ d.id }}</td>
+      <td style="font-size:11px">{{ d.request_id[:12] if d.request_id else '' }}...</td>
+      <td>{{ d.client_name }}</td>
+      <td style="font-size:11px;max-width:150px;overflow:hidden">{{ d.webhook_url[:40] if d.webhook_url else '' }}</td>
+      <td>{{ d.event_type }}</td>
+      <td>
+        {% if d.http_status and d.http_status < 400 %}
+          <span class="badge badge-ok">{{ d.http_status }}</span>
+        {% elif d.http_status %}
+          <span class="badge badge-fail">{{ d.http_status }}</span>
+        {% else %}
+          -
+        {% endif %}
+      </td>
+      <td>{{ d.retry_count }}</td>
+      <td style="font-size:11px">{{ d.delivered_at }}</td>
+      <td>
+        <form action="/admin/webhooks/{{ d.id }}/retry" method="post" class="inline-form">
+          <button type="submit" class="btn" style="font-size:11px;padding:2px 8px">Retry</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <div class="pagination">
+    {% if page > 1 %}<a href="/admin/webhooks?page={{ page - 1 }}">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ total_pages }} ({{ total }} total)</span>
+    {% if page < total_pages %}<a href="/admin/webhooks?page={{ page + 1 }}">Next</a>{% endif %}
+  </div>
+</div>
+{% endblock %}

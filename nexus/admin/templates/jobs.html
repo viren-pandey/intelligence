@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Jobs{% endblock %}
+{% block content %}
+<h1>All Active Jobs ({{ total_all }})</h1>
+<div class="filters">
+  <a href="/admin/jobs?filter=all">All</a>
+  <a href="/admin/jobs?filter=internship">Internship</a>
+  <a href="/admin/jobs?filter=fulltime">Fulltime</a>
+  <a href="/admin/jobs?filter=remote">Remote</a>
+  <a href="/admin/jobs?filter=paid">Paid</a>
+  <a href="/admin/jobs?filter=unpaid">Unpaid</a>
+  <a href="/admin/jobs?filter=niche">Niche</a>
+  <a href="/admin/jobs?filter=reported">Reported</a>
+</div>
+<form action="/admin/jobs" method="get" class="flex" style="margin:12px 0">
+  <input type="hidden" name="filter" value="{{ filter }}">
+  <input type="text" name="search" value="{{ search }}" placeholder="Search title or company..." style="width:300px">
+  <button type="submit" class="btn btn-primary">Search</button>
+</form>
+<div class="card">
+  <table>
+    <tr><th>Title</th><th>Company</th><th>Type</th><th>Paid</th><th>Deadline</th><th>Trust</th><th>Location</th><th>Reports</th></tr>
+    {% for j in jobs %}
+    <tr>
+      <td><a href="/admin/jobs/{{ j.job_id }}">{{ j.title[:60] }}</a></td>
+      <td>{{ j.company }}</td>
+      <td>{{ j.job_type }}</td>
+      <td>{% if j.paid is none %}?{% elif j.paid %}<span class="green">YES</span>{% else %}NO{% endif %}</td>
+      <td style="font-size:12px">{{ j.deadline }}</td>
+      <td>{{ "%.2f"|format(j.trust_score) }}</td>
+      <td style="font-size:12px">{{ j.location[:25] }}</td>
+      <td>{% if j.report_count > 0 %}<span class="badge badge-fail">{{ j.report_count }}</span>{% else %}0{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <div class="pagination">
+    {% if page > 1 %}<a href="/admin/jobs?filter={{ filter }}&search={{ search }}&page={{ page - 1 }}">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ total_pages }} ({{ total }} results)</span>
+    {% if page < total_pages %}<a href="/admin/jobs?filter={{ filter }}&search={{ search }}&page={{ page + 1 }}">Next</a>{% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>NEXUS — Contact Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Consolas', monospace; background: #f8f9fa; color: #1a1a2e; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .container { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 40px; width: 480px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    h1 span { color: #e94560; }
+    .subtitle { font-size: 13px; color: #666; margin-bottom: 24px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-top: 14px; margin-bottom: 4px; }
+    input, textarea, select { width: 100%; font-family: inherit; font-size: 14px; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; transition: border-color 0.2s; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    textarea { min-height: 100px; resize: vertical; }
+    button { width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 20px; transition: background 0.2s; font-family: inherit; }
+    button:hover { background: #1d4ed8; }
+    .success { background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; padding: 14px; text-align: center; margin-top: 16px; color: #155724; }
+    .error { background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; padding: 14px; text-align: center; margin-top: 16px; color: #721c24; }
+    .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><span>NEXUS</span> Support</h1>
+    <div class="subtitle">Request credit increase or report an issue</div>
+    {% if submitted %}
+      <div class="success">Your request has been submitted. Admin will review it shortly.</div>
+    {% elif error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post">
+      <label>Client Name</label>
+      <input type="text" name="client_name" required placeholder="e.g. InternHunt">
+      <label>Contact Email</label>
+      <input type="email" name="contact_email" required placeholder="you@example.com">
+      <label>Subject</label>
+      <input type="text" name="subject" required placeholder="Credit increase request">
+      <label>Request Type</label>
+      <select name="request_type">
+        <option value="credit_increase">Credit Increase</option>
+        <option value="rate_limit_increase">Rate Limit Increase</option>
+        <option value="bug_report">Bug Report</option>
+        <option value="other">Other</option>
+      </select>
+      <label>Desired New Limit (if applicable)</label>
+      <input type="number" name="new_limit" placeholder="e.g. 500">
+      <label>Message</label>
+      <textarea name="message" required placeholder="Describe what you need..."></textarea>
+      <button type="submit">Submit Request</button>
+    </form>
+    <div class="footer">NEXUS Intelligence Middleware</div>
+  </div>
+</body>
+</html>
